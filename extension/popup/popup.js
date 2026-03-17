@@ -215,8 +215,11 @@ document.getElementById('add-btn').addEventListener('click', async () => {
 
 // Lock logic
 document.getElementById('lock-btn').addEventListener('click', () => {
+    chrome.runtime.sendMessage({ type: 'LOCK' });
     vaultView.classList.add('hidden');
     authView.classList.remove('hidden');
     statusMsg.innerText = 'Securely store your passwords';
     document.getElementById('password').value = '';
+    derivedKey = null;
+    loggedInUserId = null;
 });
