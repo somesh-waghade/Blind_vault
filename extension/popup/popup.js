@@ -179,13 +179,16 @@ async function loginUser(username, password) {
 }
 
 async function hashPassword(password) {
-    // SECURITY NOTE: In a production ZKP system, this MUST be a Poseidon hash
-    // to match the circuit. For this MVP, we use a numeric mapping of SHA-256.
+    // Custom linear hash for the demo (must match auth.circom)
+    const p = BigInt("21888242871839275222246405745257275088548364400416034343698204186575808495617");
+    
+    // Map string to a field element (BigInt)
     const encoder = new TextEncoder();
-    const data = encoder.encode(password);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return BigInt('0x' + hashArray.map(b => b.toString(16).padStart(2, '0')).join('')) % BigInt("21888242871839275222246405745257275088548364400416034343698204186575808495617");
+    const bytes = encoder.encode(password);
+    const passwordNum = BigInt('0x' + Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('')) % p;
+
+    // Linear Hash: H(x) = (x * 123456789 + 987654321) mod p
+    return (passwordNum * 123456789n + 987654321n) % p;
 }
 
 async function generateProof(password, passwordHash) {
