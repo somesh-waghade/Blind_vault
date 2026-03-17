@@ -1,26 +1,80 @@
+console.log('BlindVault Content Script Loaded');
+
+function detectAndFill() {
+    const passwordFields = document.querySelectorAll('input[type="password"]');
+    if (passwordFields.length === 0) return;
+
+    const host = window.location.hostname;
+    
+    chrome.runtime.sendMessage({ type: 'GET_CREDENTIALS', host: host }, (response) => {
+        if (response && response.credentials && response.credentials.length > 0) {
+            const cred = response.credentials[0]; // Take first match
+            
+            passwordFields.forEach(passField => {
+                const form = passField.closest('form');
+                if (form) {
+                    const userField = form.querySelector('input[type="text"], input[type="email"]');
+                    if (userField && !userField.value) userField.value = cred.username;
+                    if (!passField.value) passField.value = cred.password;
+                    // console.log('BlindVault: Autofilled credentials for', host);
+                }
+            });
+        }
+    });
+}
+
 // Track form submissions for password capture
 function trackFormSubmissions() {
+    // 1. Traditional Form Submit
     const forms = document.querySelectorAll('form');
     forms.forEach(form => {
         if (form.dataset.bvListener) return;
         form.dataset.bvListener = 'true';
+        console.log('BlindVault: Monitoring form', form);
 
         form.addEventListener('submit', () => {
-            const passwordField = form.querySelector('input[type="password"]');
-            const userField = form.querySelector('input[type="text"], input[type="email"], input[name*="user"], input[name*="email"]');
-            
-            if (passwordField && passwordField.value) {
-                const username = userField ? userField.value : 'Unknown User';
-                const password = passwordField.value;
-                const site = window.location.hostname;
-
-                // Optimization: Briefly delay to see if form actually submits
-                setTimeout(() => {
-                    showSavePrompt(site, username, password);
-                }, 500);
-            }
+            console.log('BlindVault: Form submit detected');
+            captureAndPrompt(form);
         });
     });
+
+    // 2. Button Click Fallback (for AJAX/SPA logins)
+    const buttons = document.querySelectorAll('button, input[type="submit"], input[type="button"]');
+    buttons.forEach(btn => {
+        if (btn.dataset.bvListener) return;
+        btn.dataset.bvListener = 'true';
+        
+        const text = btn.innerText.toLowerCase();
+        if (text.includes('log') || text.includes('sign') || text.includes('submit')) {
+            btn.addEventListener('click', () => {
+                console.log('BlindVault: Submit button click detected');
+                const form = btn.closest('form') || document;
+                captureAndPrompt(form);
+            });
+        }
+    });
+}
+
+function captureAndPrompt(root) {
+    const passwordField = root.querySelector('input[type="password"]');
+    const userField = root.querySelector('input[type="text"], input[type="email"], input[name*="user"], input[name*="email"], input[id*="user"]');
+    
+    if (passwordField && passwordField.value) {
+        const username = userField ? userField.value : 'Unknown User';
+        const password = passwordField.value;
+        const site = window.location.hostname;
+
+        console.log('BlindVault: Credentials harvested from', site);
+        
+        // Save to temporary storage in case of redirect
+        chrome.storage.local.set({ 
+            bv_pending_save: { site, username, password, timestamp: Date.now() } 
+        }, () => {
+            showSavePrompt(site, username, password);
+        });
+    } else {
+        console.log('BlindVault: No password found in submission');
+    }
 }
 
 function showSavePrompt(site, username, password) {
@@ -83,6 +137,19 @@ function showSavePrompt(site, username, password) {
 window.addEventListener('load', () => {
     detectAndFill();
     trackFormSubmissions();
+    
+    // Check for pending saves from previous page load
+    chrome.storage.local.get(['bv_pending_save'], (result) => {
+        if (result.bv_pending_save) {
+            const { site, username, password, timestamp } = result.bv_pending_save;
+            // Check if it's recent (within 1 minute)
+            if (Date.now() - timestamp < 60000) {
+                console.log('BlindVault: Restoring pending save prompt');
+                showSavePrompt(site, username, password);
+            }
+            chrome.storage.local.remove('bv_pending_save');
+        }
+    });
 });
 
 setInterval(() => {
