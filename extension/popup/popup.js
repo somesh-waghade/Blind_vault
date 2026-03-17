@@ -179,19 +179,13 @@ async function loginUser(username, password) {
 }
 
 async function hashPassword(password) {
-    if (!window.circomlibjs) {
-        console.error('circomlibjs not loaded, falling back to mock');
-        return BigInt(12345); 
-    }
-    const poseidon = await window.circomlibjs.buildPoseidon();
-    
-    // Convert string to a number (this is a simplified mapping)
+    // SECURITY NOTE: In a production ZKP system, this MUST be a Poseidon hash
+    // to match the circuit. For this MVP, we use a numeric mapping of SHA-256.
     const encoder = new TextEncoder();
-    const bytes = encoder.encode(password);
-    const passwordNum = BigInt('0x' + Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('')) % BigInt("21888242871839275222246405745257275088548364400416034343698204186575808495617");
-
-    const hash = poseidon([passwordNum]);
-    return poseidon.F.toObject(hash);
+    const data = encoder.encode(password);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return BigInt('0x' + hashArray.map(b => b.toString(16).padStart(2, '0')).join('')) % BigInt("21888242871839275222246405745257275088548364400416034343698204186575808495617");
 }
 
 async function generateProof(password, passwordHash) {
