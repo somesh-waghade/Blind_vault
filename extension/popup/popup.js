@@ -12,6 +12,27 @@ const statusMsg = document.getElementById('status-msg');
 let currentMode = 'login'; // 'login' or 'register'
 let derivedKey = null; // Stored in memory only
 let loggedInUserId = null; // Stored for sync
+let allCredentials = []; // Cache for filtering
+
+// Toast System
+function showToast(message) {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.innerText = message;
+    container.appendChild(toast);
+    setTimeout(() => toast.remove(), 2500);
+}
+
+// Copy to Clipboard
+async function copyToClipboard(text, label) {
+    try {
+        await navigator.clipboard.writeText(text);
+        showToast(`${label} copied!`);
+    } catch (err) {
+        showToast('Failed to copy');
+    }
+}
 
 // Helper to get salt (in real app, this should be unique per user and fetched from DB)
 const FIXED_SALT = new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]);
@@ -153,19 +174,47 @@ async function fetchVault(userId) {
 }
 
 function displayVault(credentials) {
+    allCredentials = credentials; // Update cache
+    renderList(credentials);
+}
+
+function renderList(listToRender) {
     const list = document.getElementById('credentials-list');
     list.innerHTML = '';
-    if (credentials.length === 0) {
-        list.innerHTML = '<p class="empty-msg">No credentials stored yet.</p>';
+    
+    if (listToRender.length === 0) {
+        list.innerHTML = '<p class="empty-msg">No matches found.</p>';
         return;
     }
-    credentials.forEach(cred => {
+
+    listToRender.forEach(cred => {
         const div = document.createElement('div');
         div.className = 'credential-item';
-        div.innerHTML = `<strong>${cred.site}</strong>: ${cred.username} (Password hidden)`;
+        div.innerHTML = `
+            <div class="cred-info">
+                <div class="site">${cred.site}</div>
+                <div class="user">${cred.username}</div>
+            </div>
+            <button class="copy-btn">Copy</button>
+        `;
+        
+        div.querySelector('.copy-btn').addEventListener('click', () => {
+            copyToClipboard(cred.password, 'Password');
+        });
+
         list.appendChild(div);
     });
 }
+
+// Search Logic
+document.getElementById('vault-search').addEventListener('input', (e) => {
+    const query = e.target.value.toLowerCase();
+    const filtered = allCredentials.filter(cred => 
+        cred.site.toLowerCase().includes(query) || 
+        cred.username.toLowerCase().includes(query)
+    );
+    renderList(filtered);
+});
 
 // Add Credential Logic
 document.getElementById('add-btn').addEventListener('click', async () => {

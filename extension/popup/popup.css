@@ -1,33 +1,59 @@
+:root {
+    --primary: #2563eb;
+    --primary-hover: #1d4ed8;
+    --bg: #ffffff;
+    --surface: #f3f4f6;
+    --text: #1f2937;
+    --text-muted: #6b7280;
+    --border: #e5e7eb;
+    --danger: #ef4444;
+    --success: #10b981;
+    --radius: 8px;
+    --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+}
+
 body {
-    width: 320px;
+    width: 350px;
     margin: 0;
     padding: 0;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #f8f9fa;
-    color: #333;
+    font-family: 'Inter', sans-serif;
+    background-color: var(--bg);
+    color: var(--text);
+    overflow-x: hidden;
+}
+
+h1, h2, h3, .header h1 {
+    font-family: 'Outfit', sans-serif;
 }
 
 .header {
-    background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
-    color: white;
-    padding: 20px 10px;
+    background-color: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 24px 16px;
     text-align: center;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
 .header h1 {
     margin: 0;
-    font-size: 1.4rem;
+    font-size: 1.5rem;
+    color: var(--primary);
+    font-weight: 700;
 }
 
 .header p {
-    margin: 5px 0 0;
-    font-size: 0.8rem;
-    opacity: 0.9;
+    margin: 8px 0 0;
+    font-size: 0.85rem;
+    color: var(--text-muted);
 }
 
 .container {
-    padding: 15px;
+    padding: 20px;
+    animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 .hidden {
@@ -37,9 +63,9 @@ body {
 /* Tabs */
 .tabs {
     display: flex;
-    margin-bottom: 20px;
-    background: #eee;
-    border-radius: 8px;
+    margin-bottom: 24px;
+    background: var(--surface);
+    border-radius: var(--radius);
     padding: 4px;
 }
 
@@ -47,61 +73,73 @@ body {
     flex: 1;
     border: none;
     background: none;
-    padding: 8px;
+    padding: 10px;
     cursor: pointer;
     border-radius: 6px;
     font-weight: 600;
-    color: #666;
-    transition: all 0.3s;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    transition: all 0.2s;
 }
 
 .tabs button.active {
     background: white;
-    color: #4a90e2;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    color: var(--primary);
+    box-shadow: var(--shadow);
 }
 
 /* Forms */
 .form-group {
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    margin-bottom: 20px;
+    gap: 16px;
+    margin-bottom: 24px;
 }
 
 input {
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 6px;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
     outline: none;
-    transition: border-color 0.3s;
+    font-family: inherit;
+    font-size: 0.95rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 input:focus {
-    border-color: #4a90e2;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
 button#auth-btn, button#add-btn {
     width: 100%;
-    padding: 12px;
-    background-color: #4a90e2;
+    padding: 14px;
+    background-color: var(--primary);
     color: white;
     border: none;
-    border-radius: 6px;
+    border-radius: var(--radius);
     font-weight: 600;
+    font-size: 1rem;
     cursor: pointer;
-    transition: background 0.3s;
+    transition: background 0.2s, transform 0.1s;
 }
 
 button#auth-btn:hover, button#add-btn:hover {
-    background-color: #357abd;
+    background-color: var(--primary-hover);
+}
+
+button#auth-btn:active, button#add-btn:active {
+    transform: scale(0.98);
 }
 
 .hint {
-    font-size: 0.75rem;
-    color: #888;
+    font-size: 0.8rem;
+    color: var(--text-muted);
     text-align: center;
-    margin-top: 10px;
+    margin-top: 16px;
+    line-height: 1.4;
 }
 
 /* Vault view */
@@ -109,26 +147,112 @@ button#auth-btn:hover, button#add-btn:hover {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 15px;
+    margin-bottom: 20px;
 }
 
 .vault-header h3 {
     margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
 }
 
 #lock-btn {
-    padding: 4px 10px;
-    background: none;
-    border: 1px solid #ff4d4d;
-    color: #ff4d4d;
-    border-radius: 4px;
+    padding: 6px 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--danger);
+    border-radius: 6px;
     cursor: pointer;
     font-size: 0.8rem;
+    font-weight: 600;
+    transition: all 0.2s;
 }
 
-.empty-msg {
-    text-align: center;
-    color: #999;
-    padding: 20px 0;
-    font-style: italic;
+#lock-btn:hover {
+    background: #fee2e2;
+    border-color: #fecaca;
+}
+
+.search-box {
+    margin-bottom: 16px;
+}
+
+#credentials-list {
+    margin-bottom: 24px;
+    max-height: 250px;
+    overflow-y: auto;
+}
+
+.credential-item {
+    background: white;
+    padding: 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: border-color 0.2s;
+}
+
+.credential-item:hover {
+    border-color: var(--primary);
+}
+
+.cred-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.cred-info .site {
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.cred-info .user {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.copy-btn {
+    background: var(--surface);
+    border: none;
+    padding: 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    transition: all 0.2s;
+}
+
+.copy-btn:hover {
+    background: var(--primary);
+    color: white;
+}
+
+/* Toast System */
+#toast-container {
+    position: fixed;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+    pointer-events: none;
+}
+
+.toast {
+    background: var(--text);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    margin-bottom: 8px;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
 }
