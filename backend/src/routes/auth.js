@@ -44,8 +44,11 @@ router.post('/login', async (req, res) => {
     }
 
     // 1. Verify that the public signals provided match the ones in the DB
-    // In our circuit, publicSignals[0] is the passwordHash
-    if (JSON.stringify(publicSignals) !== JSON.stringify(user.publicSignals)) {
+    const signalsMatch = publicSignals.length === user.publicSignals.length &&
+                         publicSignals.every((val, i) => val.toString() === user.publicSignals[i].toString());
+
+    if (!signalsMatch) {
+        console.log('Signal mismatch details:', { sent: publicSignals, stored: user.publicSignals });
         return res.status(401).json({ msg: 'Public signal mismatch' });
     }
 
