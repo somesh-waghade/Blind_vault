@@ -10,7 +10,11 @@
 <body>
     <div id="toast-container"></div>
     <div class="header">
-        <h1>BlindVault 🛡️</h1>
+        <div class="nav-icons">
+            <button id="nav-vault" class="active" title="Vault">🛡️</button>
+            <button id="nav-settings" title="Settings">⚙️</button>
+        </div>
+        <h1>BlindVault</h1>
         <p id="status-msg">Securely store your passwords</p>
     </div>
 
@@ -44,6 +48,41 @@
             <p class="empty-msg">No credentials stored yet.</p>
         </div>
         <button id="add-btn">+ Add Password</button>
+    </div>
+
+    <!-- Settings View (Hidden by default) -->
+    <div id="settings-view" class="container hidden">
+        <div class="settings-section">
+            <h4>Profile</h4>
+            <div class="profile-card">
+                <div class="profile-info">
+                    <span class="label">Username</span>
+                    <span id="profile-username" class="value">Not Logged In</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="settings-section">
+            <h4>Preferences</h4>
+            <div class="setting-item">
+                <label for="auto-lock">Auto-lock (minutes)</label>
+                <select id="auto-lock-timer">
+                    <option value="5">5 minutes</option>
+                    <option value="15">15 minutes</option>
+                    <option value="30" selected>30 minutes</option>
+                    <option value="60">1 hour</option>
+                </select>
+            </div>
+            <div class="setting-item">
+                <label>Theme</label>
+                <div class="theme-toggle">
+                    <button class="active">Light</button>
+                    <button disabled title="Coming soon">Dark</button>
+                </div>
+            </div>
+        </div>
+
+        <button id="logout-btn" class="danger-btn">Log Out & Wipe Key</button>
     </div>
 
     <script src="../scripts/crypto.js"></script>

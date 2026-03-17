@@ -3,6 +3,9 @@ const API_URL = 'http://localhost:5000/api';
 // UI Elements
 const authView = document.getElementById('auth-view');
 const vaultView = document.getElementById('vault-view');
+const settingsView = document.getElementById('settings-view');
+const navVault = document.getElementById('nav-vault');
+const navSettings = document.getElementById('nav-settings');
 const tabLogin = document.getElementById('tab-login');
 const tabRegister = document.getElementById('tab-register');
 const authBtn = document.getElementById('auth-btn');
@@ -12,6 +15,8 @@ const statusMsg = document.getElementById('status-msg');
 let currentMode = 'login'; // 'login' or 'register'
 let derivedKey = null; // Stored in memory only
 let loggedInUserId = null; // Stored for sync
+let loggedInUsername = null; // Stored for profile display
+let allCredentials = []; // Cache for filtering
 let allCredentials = []; // Cache for filtering
 
 // Toast System
@@ -37,7 +42,27 @@ async function copyToClipboard(text, label) {
 // Helper to get salt (in real app, this should be unique per user and fetched from DB)
 const FIXED_SALT = new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]);
 
-// Toggle Views
+// Navigation logic
+navVault.addEventListener('click', () => {
+    if (!loggedInUserId) return;
+    vaultView.classList.remove('hidden');
+    settingsView.classList.add('hidden');
+    navVault.classList.add('active');
+    navSettings.classList.remove('active');
+});
+
+navSettings.addEventListener('click', () => {
+    if (!loggedInUserId) return;
+    settingsView.classList.remove('hidden');
+    vaultView.classList.add('hidden');
+    navSettings.classList.add('active');
+    navVault.classList.remove('active');
+    
+    // Update profile info
+    document.getElementById('profile-username').innerText = loggedInUsername;
+});
+
+// Toggle Auth Views
 tabLogin.addEventListener('click', () => {
     currentMode = 'login';
     tabLogin.classList.add('active');
@@ -63,6 +88,8 @@ authBtn.addEventListener('click', async () => {
         alert('Please fill in all fields');
         return;
     }
+
+    loggedInUsername = username; // Temporarily store
 
     // Derive key locally immediately
     try {
@@ -270,13 +297,20 @@ document.getElementById('add-btn').addEventListener('click', async () => {
     }
 });
 
-// Lock logic
-document.getElementById('lock-btn').addEventListener('click', () => {
+// Lock/Logout logic
+function performLock() {
     chrome.runtime.sendMessage({ type: 'LOCK' });
     vaultView.classList.add('hidden');
+    settingsView.classList.add('hidden');
     authView.classList.remove('hidden');
     statusMsg.innerText = 'Securely store your passwords';
     document.getElementById('password').value = '';
     derivedKey = null;
     loggedInUserId = null;
-});
+    loggedInUsername = null;
+    navVault.classList.add('active');
+    navSettings.classList.remove('active');
+}
+
+document.getElementById('lock-btn').addEventListener('click', performLock);
+document.getElementById('logout-btn').addEventListener('click', performLock);
