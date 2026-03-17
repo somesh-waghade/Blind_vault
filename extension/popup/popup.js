@@ -137,6 +137,14 @@ async function fetchVault(userId) {
             const { ciphertext, iv } = JSON.parse(data.encryptedData);
             const decrypted = await CryptoModule.decrypt(ciphertext, iv, derivedKey);
             const credentials = JSON.parse(decrypted);
+
+            // SYNC WITH BACKGROUND
+            chrome.runtime.sendMessage({
+                type: 'SET_SESSION',
+                vault: credentials,
+                userId: userId
+            });
+
             displayVault(credentials);
         }
     } catch (e) {
