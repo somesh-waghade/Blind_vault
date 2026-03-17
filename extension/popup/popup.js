@@ -11,6 +11,7 @@ const statusMsg = document.getElementById('status-msg');
 
 let currentMode = 'login'; // 'login' or 'register'
 let derivedKey = null; // Stored in memory only
+let loggedInUserId = null; // Stored for sync
 
 // Helper to get salt (in real app, this should be unique per user and fetched from DB)
 const FIXED_SALT = new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]);
@@ -170,7 +171,7 @@ document.getElementById('add-btn').addEventListener('click', async () => {
 
     try {
         // 1. Get current vault
-        const response = await fetch(`${API_URL}/vault/${userId}`);
+        const response = await fetch(`${API_URL}/vault/${loggedInUserId}`);
         let credentials = [];
         if (response.ok) {
             const data = await response.json();
@@ -192,7 +193,7 @@ document.getElementById('add-btn').addEventListener('click', async () => {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
-                userId: userId, 
+                userId: loggedInUserId, 
                 encryptedData: JSON.stringify({ ciphertext, iv }) 
             })
         });
