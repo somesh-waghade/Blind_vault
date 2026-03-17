@@ -3,13 +3,15 @@
   "name": "BlindVault",
   "version": "1.0",
   "description": "ZKP-Based Privacy Preserving Password Manager",
-  "permissions": ["storage", "activeTab", "scripting"],
+  "permissions": ["storage", "activeTab", "scripting", "sidePanel"],
   "content_security_policy": {
     "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
   },
   "action": {
-    "default_popup": "popup/popup.html",
     "default_icon": "icons/icon128.png"
+  },
+  "side_panel": {
+    "default_path": "popup/popup.html"
   },
   "background": {
     "service_worker": "scripts/background.js"

@@ -6,6 +6,9 @@ let sessionStore = {
 
 chrome.runtime.onInstalled.addListener(() => {
   console.log('BlindVault Extension Installed');
+  // Configure side panel to open on action click
+  chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true })
+    .catch((error) => console.error(error));
 });
 
 // Listen for messages from Popup and Content Scripts
