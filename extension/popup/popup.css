@@ -64,8 +64,13 @@ body {
 .nav-icons button.active {
     background: var(--primary);
     border-color: var(--primary);
+    color: white; /* For SVG */
     box-shadow: 0 0 15px rgba(246, 133, 27, 0.4);
     transform: translateY(-2px);
+}
+
+.nav-icons button:not(.active) {
+    color: var(--text-muted);
 }
 
 .nav-icons button:not(.active):hover {
