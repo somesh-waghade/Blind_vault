@@ -224,7 +224,8 @@ async function fetchVault(userId) {
             chrome.runtime.sendMessage({
                 type: 'SET_SESSION',
                 vault: credentials,
-                userId: userId
+                userId: userId,
+                derivedKey: derivedKey
             });
 
             displayVault(credentials);

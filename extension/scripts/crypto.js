@@ -77,7 +77,10 @@ const CryptoModule = {
     }
 };
 
-// Export for use in popup/background
+// Export for use in popup/background/service-worker
+if (typeof self !== 'undefined') {
+    self.CryptoModule = CryptoModule;
+}
 if (typeof window !== 'undefined') {
     window.CryptoModule = CryptoModule;
 }
