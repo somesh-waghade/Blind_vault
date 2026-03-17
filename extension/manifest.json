@@ -19,5 +19,11 @@
   ],
   "icons": {
     "128": "icons/icon128.png"
-  }
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["assets/zkp/*"],
+      "matches": ["<all_urls>"]
+    }
+  ]
 }

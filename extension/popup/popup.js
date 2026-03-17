@@ -108,15 +108,15 @@ authBtn.addEventListener('click', async () => {
 
 async function registerUser(username, password) {
     statusMsg.innerText = 'Registering...';
-    
-    // TODO: Generate actual ZKP public signals from password
-    const mockPublicSignals = ["0x123...", "0x456..."];
-
     try {
+        // Generate public signal (hash of password)
+        const passwordHash = await hashPassword(password);
+        const publicSignals = [passwordHash.toString()];
+
         const response = await fetch(`${API_URL}/auth/register`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, publicSignals: mockPublicSignals })
+            body: JSON.stringify({ username, publicSignals })
         });
 
         const data = await response.json();
@@ -137,20 +137,24 @@ async function registerUser(username, password) {
 async function loginUser(username, password) {
     statusMsg.innerText = 'Logging in...';
 
-    // TODO: Generate actual ZKP proof
-    const mockProof = { pi_a: [], pi_b: [], pi_c: [] };
-    const mockPublicSignals = ["0x123...", "0x456..."];
-
     try {
+        // 1. Generate numeric hash for the circuit
+        const passwordHash = await hashPassword(password);
+        
+        // 2. Generate Proof
+        statusMsg.innerText = 'Generating Zero-Knowledge Proof...';
+        const { proof, publicSignals } = await generateProof(password, passwordHash);
+        
         const response = await fetch(`${API_URL}/auth/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, proof: mockProof, publicSignals: mockPublicSignals })
+            body: JSON.stringify({ username, proof, publicSignals })
         });
 
         const data = await response.json();
         if (response.ok) {
             // Switch to Vault View
+            loggedInUserId = data.userId;
             authView.classList.add('hidden');
             vaultView.classList.remove('hidden');
             statusMsg.innerText = `Welcome, ${username}! 🔓`;
@@ -162,16 +166,51 @@ async function loginUser(username, password) {
             derivedKey = null; // Clear key on failure
         }
     } catch (err) {
-        console.error(err);
-        alert('Could not connect to backend');
+        console.error('ZKP Error:', err);
+        alert(err.message || 'Verification failed');
         derivedKey = null;
     } finally {
         if (authView.classList.contains('hidden')) {
-            // Already logged in
+            // Logged in
         } else {
             statusMsg.innerText = 'Securely store your passwords';
         }
     }
+}
+
+async function hashPassword(password) {
+    if (!window.circomlibjs) {
+        console.error('circomlibjs not loaded, falling back to mock');
+        return BigInt(12345); 
+    }
+    const poseidon = await window.circomlibjs.buildPoseidon();
+    
+    // Convert string to a number (this is a simplified mapping)
+    const encoder = new TextEncoder();
+    const bytes = encoder.encode(password);
+    const passwordNum = BigInt('0x' + Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('')) % BigInt("21888242871839275222246405745257275088548364400416034343698204186575808495617");
+
+    const hash = poseidon([passwordNum]);
+    return poseidon.F.toObject(hash);
+}
+
+async function generateProof(password, passwordHash) {
+    if (!window.snarkjs) throw new Error('snarkjs not loaded');
+    
+    // We need to pass the SAME numeric password used for hashing
+    const encoder = new TextEncoder();
+    const bytes = encoder.encode(password);
+    const passwordNum = BigInt('0x' + Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('')) % BigInt("21888242871839275222246405745257275088548364400416034343698204186575808495617");
+
+    const inputs = {
+        password: passwordNum.toString(),
+        passwordHash: passwordHash.toString()
+    };
+
+    const wasmPath = chrome.runtime.getURL('assets/zkp/auth.wasm');
+    const zkeyPath = chrome.runtime.getURL('assets/zkp/auth_final.zkey');
+
+    return await window.snarkjs.groth16.fullProve(inputs, wasmPath, zkeyPath);
 }
 
 async function fetchVault(userId) {
