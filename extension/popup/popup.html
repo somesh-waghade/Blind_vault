@@ -2,42 +2,43 @@
 <html>
 <head>
     <title>BlindVault</title>
-    <style>
-        body {
-            width: 300px;
-            padding: 20px;
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f9;
-        }
-        h1 {
-            color: #333;
-            font-size: 1.5em;
-            text-align: center;
-        }
-        .container {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        button {
-            padding: 10px;
-            background-color: #4a90e2;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        button:hover {
-            background-color: #357abd;
-        }
-    </style>
+    <link rel="stylesheet" href="popup.css">
 </head>
 <body>
-    <h1>BlindVault 🛡️</h1>
-    <div class="container">
-        <button id="unlock">Unlock Vault</button>
-        <button id="settings">Settings</button>
+    <div class="header">
+        <h1>BlindVault 🛡️</h1>
+        <p id="status-msg">Securely store your passwords</p>
     </div>
+
+    <!-- Auth View -->
+    <div id="auth-view" class="container">
+        <div class="tabs">
+            <button id="tab-login" class="active">Login</button>
+            <button id="tab-register">Register</button>
+        </div>
+
+        <div class="form-group">
+            <input type="text" id="username" placeholder="Username">
+            <input type="password" id="password" placeholder="Master Password">
+        </div>
+
+        <button id="auth-btn">Log In</button>
+        <p class="hint" id="auth-hint">Enter your master password to unlock.</p>
+    </div>
+
+    <!-- Vault View (Hidden by default) -->
+    <div id="vault-view" class="container hidden">
+        <div class="vault-header">
+            <h3>Your Vault</h3>
+            <button id="lock-btn">Lock</button>
+        </div>
+        <div id="credentials-list">
+            <!-- Items injected here -->
+            <p class="empty-msg">No credentials stored yet.</p>
+        </div>
+        <button id="add-btn">+ Add Password</button>
+    </div>
+
     <script src="popup.js"></script>
 </body>
 </html>

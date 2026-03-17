@@ -1,0 +1,134 @@
+body {
+    width: 320px;
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f8f9fa;
+    color: #333;
+}
+
+.header {
+    background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
+    color: white;
+    padding: 20px 10px;
+    text-align: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.header h1 {
+    margin: 0;
+    font-size: 1.4rem;
+}
+
+.header p {
+    margin: 5px 0 0;
+    font-size: 0.8rem;
+    opacity: 0.9;
+}
+
+.container {
+    padding: 15px;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* Tabs */
+.tabs {
+    display: flex;
+    margin-bottom: 20px;
+    background: #eee;
+    border-radius: 8px;
+    padding: 4px;
+}
+
+.tabs button {
+    flex: 1;
+    border: none;
+    background: none;
+    padding: 8px;
+    cursor: pointer;
+    border-radius: 6px;
+    font-weight: 600;
+    color: #666;
+    transition: all 0.3s;
+}
+
+.tabs button.active {
+    background: white;
+    color: #4a90e2;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+/* Forms */
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+input {
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    outline: none;
+    transition: border-color 0.3s;
+}
+
+input:focus {
+    border-color: #4a90e2;
+}
+
+button#auth-btn, button#add-btn {
+    width: 100%;
+    padding: 12px;
+    background-color: #4a90e2;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+button#auth-btn:hover, button#add-btn:hover {
+    background-color: #357abd;
+}
+
+.hint {
+    font-size: 0.75rem;
+    color: #888;
+    text-align: center;
+    margin-top: 10px;
+}
+
+/* Vault view */
+.vault-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.vault-header h3 {
+    margin: 0;
+}
+
+#lock-btn {
+    padding: 4px 10px;
+    background: none;
+    border: 1px solid #ff4d4d;
+    color: #ff4d4d;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.8rem;
+}
+
+.empty-msg {
+    text-align: center;
+    color: #999;
+    padding: 20px 0;
+    font-style: italic;
+}
