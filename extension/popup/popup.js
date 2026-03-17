@@ -14,9 +14,7 @@ const statusMsg = document.getElementById('status-msg');
 
 let currentMode = 'login'; // 'login' or 'register'
 let derivedKey = null; // Stored in memory only
-let loggedInUserId = null; // Stored for sync
 let loggedInUsername = null; // Stored for profile display
-let allCredentials = []; // Cache for filtering
 let allCredentials = []; // Cache for filtering
 
 // Toast System
