@@ -7,3 +7,4 @@ node_modules/
 build/
 dist/
 /backend/node_modules/
+circom.exe

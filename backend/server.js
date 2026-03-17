@@ -11,7 +11,7 @@ app.use(cors());
 app.use(express.json());
 
 // MongoDB Connection
-mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27011/blindvault', {
+mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/blindvault', {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 })
