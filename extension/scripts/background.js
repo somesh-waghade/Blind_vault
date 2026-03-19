@@ -96,6 +96,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 
   if (request.type === 'SET_SESSION') {
+    console.log('BlindVault: Setting session for user:', request.userId);
     sessionStore.vault = request.vault;
     sessionStore.userId = request.userId;
     
@@ -104,11 +105,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         userId: request.userId, 
         keyJWK: request.keyJWK, 
         vault: request.vault 
+    }, () => {
+        console.log('BlindVault: Session saved to storage.session');
     });
 
     CryptoModule.importKey(request.keyJWK).then(key => {
         sessionStore.derivedKey = key;
-        console.log('Session state updated with secure key');
+        console.log('BlindVault: Session state updated with secure key');
     });
     sendResponse({ success: true });
   }
