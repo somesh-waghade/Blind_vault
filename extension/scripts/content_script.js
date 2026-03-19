@@ -158,10 +158,6 @@ function showQuickUnlockPrompt(targetField, host) {
     // Auto-focus the input
     setTimeout(() => input.focus(), 100);
 }
-    } catch (e) {
-        console.warn('BlindVault: Context invalidated');
-    }
-}
 
 // Track form submissions for password capture
 function trackFormSubmissions() {

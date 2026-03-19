@@ -1,4 +1,4 @@
-importScripts('snarkjs.min.js', 'crypto.js');
+importScripts('crypto.js');
 
 // In-memory state (lost when browser/extension restarts)
 let sessionStore = {
