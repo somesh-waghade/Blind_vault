@@ -1,20 +1,18 @@
 console.log('BlindVault Content Script Loaded');
 
-function detectAndFill() {
+function detectAndFill(specificField = null) {
     const passwordFields = document.querySelectorAll('input[type="password"]');
     if (passwordFields.length === 0) return;
 
     const host = window.location.hostname;
-    console.log('BlindVault: Checking for credentials for:', host);
-    console.log('BlindVault: Found', passwordFields.length, 'password fields');
     
     try {
         chrome.runtime.sendMessage({ type: 'GET_CREDENTIALS', host: host }, (response) => {
             if (chrome.runtime.lastError) return;
 
             if (response && response.error === 'Locked') {
-                console.warn('BlindVault: Vault is locked. Showing quick unlock prompt.');
-                showQuickUnlockPrompt(passwordFields[0], host);
+                const target = specificField || passwordFields[0];
+                showQuickUnlockPrompt(target, host);
                 return;
             }
 
@@ -58,62 +56,77 @@ function showQuickUnlockPrompt(targetField, host) {
     const container = document.createElement('div');
     container.id = 'bv-quick-unlock';
     
-    // Position near the field (using viewport coordinates for fixed position)
+    // Position near the field
     const rect = targetField.getBoundingClientRect();
+    
+    // Safety check for viewport bounds
+    let top = rect.bottom + 10;
+    if (top + 150 > window.innerHeight) top = rect.top - 160;
+
     Object.assign(container.style, {
         position: 'fixed',
-        top: `${rect.bottom + 5}px`,
+        top: `${top}px`,
         left: `${rect.left}px`,
         width: '240px',
+        height: '150px',
         zIndex: '2147483647',
-        animation: 'bvFadeIn 0.2s ease-out'
+        display: 'block',
+        visibility: 'visible',
+        opacity: '1',
+        pointerEvents: 'auto'
     });
 
     const shadow = container.attachShadow({ mode: 'open' });
     shadow.innerHTML = `
         <style>
-            @keyframes bvFadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
             .mini-prompt {
                 font-family: 'Inter', system-ui, sans-serif;
                 background: #1e1e1e;
-                border: 1px solid #f6851b;
-                border-radius: 8px;
-                padding: 10px;
-                box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+                border: 2px solid #f6851b;
+                border-radius: 12px;
+                padding: 12px;
+                box-shadow: 0 8px 32px rgba(0,0,0,0.6);
                 color: white;
+                animation: bvSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
             }
-            .title { font-size: 11px; font-weight: bold; color: #f6851b; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+            @keyframes bvSlideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+            .title { font-size: 11px; font-weight: bold; color: #f6851b; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
             input {
                 width: 100%;
                 background: #2a2a2a;
-                border: 1px solid #333;
-                border-radius: 4px;
+                border: 1px solid #444;
+                border-radius: 6px;
                 color: white;
-                font-size: 13px;
-                padding: 6px;
+                font-size: 14px;
+                padding: 8px;
                 box-sizing: border-box;
-                margin-bottom: 8px;
+                margin-bottom: 10px;
                 outline: none;
+                box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
             }
-            input:focus { border-color: #f6851b; }
+            input:focus { border-color: #f6851b; box-shadow: 0 0 0 2px rgba(246, 133, 27, 0.2); }
             button {
                 width: 100%;
                 background: #f6851b;
                 color: white;
                 border: none;
-                border-radius: 4px;
-                padding: 6px;
-                font-weight: 600;
+                border-radius: 6px;
+                padding: 10px;
+                font-weight: 700;
                 cursor: pointer;
-                font-size: 12px;
+                font-size: 13px;
+                transition: all 0.2s;
             }
-            .cancel { font-size: 10px; color: #a0a0a0; text-align: center; margin-top: 6px; cursor: pointer; text-decoration: underline; }
+            button:hover { background: #e27612; transform: translateY(-1px); }
+            button:active { transform: translateY(0); }
+            .cancel { font-size: 10px; color: #888; text-align: center; margin-top: 8px; cursor: pointer; }
+            .cancel:hover { color: #ccc; }
         </style>
-        <div class="mini-prompt" id="prompt-body">
-            <div class="title">BlindVault Locked</div>
+        <div class="mini-prompt">
+            <div class="title">BlindVault Unlock</div>
             <input type="password" id="bv-pass" placeholder="Master Password" autofocus>
-            <button id="bv-unlock-btn">Unlock & Fill</button>
-            <div class="cancel" id="bv-cancel">Cancel</div>
+            <button id="bv-unlock-btn">Unlock & Autofill</button>
+            <div class="cancel" id="bv-cancel">Dismiss</div>
         </div>
     `;
 
@@ -126,25 +139,21 @@ function showQuickUnlockPrompt(targetField, host) {
         const password = input.value;
         if (!password) return;
         
-        btn.innerText = 'Unlocking...';
+        btn.innerText = 'Verifying...';
         btn.disabled = true;
 
-        chrome.runtime.sendMessage({ 
-            type: 'QUICK_UNLOCK', 
-            password, 
-            host 
-        }, (response) => {
+        chrome.runtime.sendMessage({ type: 'QUICK_UNLOCK', password, host }, (response) => {
             if (response && response.success) {
                 container.remove();
                 if (response.credentials && response.credentials.length > 0) {
                     fillForm(response.credentials[0], document.querySelectorAll('input[type="password"]'));
                 }
             } else {
-                btn.innerText = 'Incorrect! Try again';
+                btn.innerText = 'Wrong Password';
+                btn.style.background = '#dc2626';
                 btn.disabled = false;
-                btn.style.background = '#ef4444';
                 setTimeout(() => {
-                    btn.innerText = 'Unlock & Fill';
+                    btn.innerText = 'Unlock & Autofill';
                     btn.style.background = '#f6851b';
                 }, 2000);
             }
@@ -155,8 +164,10 @@ function showQuickUnlockPrompt(targetField, host) {
     input.onkeydown = (e) => { if (e.key === 'Enter') handleUnlock(); };
     shadow.getElementById('bv-cancel').onclick = () => container.remove();
     
-    // Auto-focus the input
+    // Robust focus
+    input.focus();
     setTimeout(() => input.focus(), 100);
+    setTimeout(() => input.focus(), 500);
 }
 
 // Track form submissions for password capture
@@ -305,7 +316,7 @@ window.addEventListener('load', () => {
         if (e.target.tagName === 'INPUT' && (e.target.type === 'password' || e.target.type === 'text' || e.target.type === 'email')) {
             // Only trigger if it looks like a login field or we are in a form
             if (e.target.type === 'password' || e.target.name?.includes('user') || e.target.id?.includes('user')) {
-                detectAndFill();
+                detectAndFill(e.target);
             }
         }
     });
