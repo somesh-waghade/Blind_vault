@@ -160,7 +160,8 @@ async function loginUser(username, password) {
             statusMsg.innerText = `Welcome, ${username}! 🔓`;
             
             // Fetch and decrypt vault
-            fetchVault(data.userId);
+            const jwk = await CryptoModule.exportKey(derivedKey);
+            fetchVault(data.userId, jwk);
         } else {
             alert(data.msg || 'Login failed');
             derivedKey = null; // Clear key on failure
@@ -210,7 +211,7 @@ async function generateProof(password, passwordHash) {
     return await window.snarkjs.groth16.fullProve(inputs, wasmPath, zkeyPath);
 }
 
-async function fetchVault(userId) {
+async function fetchVault(userId, jwk) {
     try {
         const response = await fetch(`${API_URL}/vault/${userId}`);
         const data = await response.json();
@@ -225,7 +226,7 @@ async function fetchVault(userId) {
                 type: 'SET_SESSION',
                 vault: credentials,
                 userId: userId,
-                derivedKey: derivedKey
+                keyJWK: jwk
             });
 
             displayVault(credentials);

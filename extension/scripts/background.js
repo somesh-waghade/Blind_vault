@@ -62,8 +62,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.type === 'SET_SESSION') {
     sessionStore.vault = request.vault;
     sessionStore.userId = request.userId;
-    sessionStore.derivedKey = request.derivedKey;
-    console.log('Session state updated');
+    CryptoModule.importKey(request.keyJWK).then(key => {
+        sessionStore.derivedKey = key;
+        console.log('Session state updated with secure key');
+    });
     sendResponse({ success: true });
   }
 
