@@ -6,32 +6,55 @@ function detectAndFill() {
 
     const host = window.location.hostname;
     console.log('BlindVault: Checking for credentials for:', host);
+    console.log('BlindVault: Found', passwordFields.length, 'password fields');
     
     try {
         chrome.runtime.sendMessage({ type: 'GET_CREDENTIALS', host: host }, (response) => {
-            if (chrome.runtime.lastError) {
-                console.warn('BlindVault: Context invalidated. Please refresh the page.');
-                return;
-            }
+            if (chrome.runtime.lastError) return;
 
             if (response && response.credentials && response.credentials.length > 0) {
-                console.log('BlindVault: Found matching credentials:', response.credentials.length);
-                const cred = response.credentials[0]; // Take first match
+                console.log('BlindVault: Matching credentials found in vault');
+                const cred = response.credentials[0];
                 
-                passwordFields.forEach(passField => {
-                    const form = passField.closest('form');
-                    if (form) {
-                        const userField = form.querySelector('input[type="text"], input[type="email"]');
-                        if (userField && !userField.value) userField.value = cred.username;
-                        if (!passField.value) passField.value = cred.password;
+                passwordFields.forEach((passField, index) => {
+                    // 1. Fill Password
+                    if (!passField.value) {
+                        passField.value = cred.password;
+                        passField.dispatchEvent(new Event('input', { bubbles: true }));
+                        passField.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+
+                    // 2. Find Username (more aggressive)
+                    // Try nearby, then by common selectors
+                    let userField = null;
+                    const container = passField.closest('form') || document;
+                    
+                    userField = container.querySelector('input[type="text"], input[type="email"], input[name*="user"], input[name*="login"], input[id*="user"], input[id*="login"]');
+                    
+                    // If multiple password fields (e.g. login + register on same page), 
+                    // try to find the one closest to THIS password field
+                    if (container === document) {
+                        // Very basic: just look at the previous sibling if possible
+                        const inputs = Array.from(document.querySelectorAll('input'));
+                        const pIdx = inputs.indexOf(passField);
+                        if (pIdx > 0 && inputs[pIdx-1].type !== 'password') {
+                            userField = inputs[pIdx-1];
+                        }
+                    }
+
+                    if (userField && !userField.value) {
+                        console.log('BlindVault: Filling username in field', userField.name || userField.id || 'unknown');
+                        userField.value = cred.username;
+                        userField.dispatchEvent(new Event('input', { bubbles: true }));
+                        userField.dispatchEvent(new Event('change', { bubbles: true }));
                     }
                 });
             } else {
-                console.log('BlindVault: No credentials found for this site.');
+                console.log('BlindVault: No matches for', host);
             }
         });
     } catch (e) {
-        console.warn('BlindVault: Extension context invalidated. Please refresh the page.');
+        console.warn('BlindVault: Context invalidated');
     }
 }
 
