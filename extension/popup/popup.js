@@ -213,27 +213,41 @@ async function generateProof(password, passwordHash) {
 }
 
 async function fetchVault(userId, jwk) {
+    statusMsg.innerText = 'Syncing vault...';
     try {
         const response = await fetch(`${API_URL}/vault/${userId}`);
-        const data = await response.json();
+        let credentials = [];
         
-        if (response.ok && data.encryptedData) {
-            const { ciphertext, iv } = JSON.parse(data.encryptedData);
-            const decrypted = await CryptoModule.decrypt(ciphertext, iv, derivedKey);
-            const credentials = JSON.parse(decrypted);
-
-            // SYNC WITH BACKGROUND
-            chrome.runtime.sendMessage({
-                type: 'SET_SESSION',
-                vault: credentials,
-                userId: userId,
-                keyJWK: jwk
-            });
-
-            displayVault(credentials);
+        if (response.ok) {
+            const data = await response.json();
+            if (data.encryptedData) {
+                const { ciphertext, iv } = JSON.parse(data.encryptedData);
+                const decrypted = await CryptoModule.decrypt(ciphertext, iv, derivedKey);
+                credentials = JSON.parse(decrypted);
+            }
         }
+
+        console.log('BlindVault: Sending SET_SESSION to background');
+        // ALWAYS SYNC SESSION state even if vault is empty
+        chrome.runtime.sendMessage({
+            type: 'SET_SESSION',
+            vault: credentials,
+            userId: userId,
+            keyJWK: jwk
+        }, (res) => {
+            console.log('BlindVault: Background session sync response:', res);
+        });
+
+        displayVault(credentials);
     } catch (e) {
         console.error('Vault fetch/decrypt error:', e);
+        // Even on error, if we have a key, we should try to set the session for new saves
+        chrome.runtime.sendMessage({
+            type: 'SET_SESSION',
+            vault: [],
+            userId: userId,
+            keyJWK: jwk
+        });
     }
 }
 
