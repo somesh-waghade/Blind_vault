@@ -5,22 +5,34 @@ function detectAndFill() {
     if (passwordFields.length === 0) return;
 
     const host = window.location.hostname;
+    console.log('BlindVault: Checking for credentials for:', host);
     
-    chrome.runtime.sendMessage({ type: 'GET_CREDENTIALS', host: host }, (response) => {
-        if (response && response.credentials && response.credentials.length > 0) {
-            const cred = response.credentials[0]; // Take first match
-            
-            passwordFields.forEach(passField => {
-                const form = passField.closest('form');
-                if (form) {
-                    const userField = form.querySelector('input[type="text"], input[type="email"]');
-                    if (userField && !userField.value) userField.value = cred.username;
-                    if (!passField.value) passField.value = cred.password;
-                    // console.log('BlindVault: Autofilled credentials for', host);
-                }
-            });
-        }
-    });
+    try {
+        chrome.runtime.sendMessage({ type: 'GET_CREDENTIALS', host: host }, (response) => {
+            if (chrome.runtime.lastError) {
+                console.warn('BlindVault: Context invalidated. Please refresh the page.');
+                return;
+            }
+
+            if (response && response.credentials && response.credentials.length > 0) {
+                console.log('BlindVault: Found matching credentials:', response.credentials.length);
+                const cred = response.credentials[0]; // Take first match
+                
+                passwordFields.forEach(passField => {
+                    const form = passField.closest('form');
+                    if (form) {
+                        const userField = form.querySelector('input[type="text"], input[type="email"]');
+                        if (userField && !userField.value) userField.value = cred.username;
+                        if (!passField.value) passField.value = cred.password;
+                    }
+                });
+            } else {
+                console.log('BlindVault: No credentials found for this site.');
+            }
+        });
+    } catch (e) {
+        console.warn('BlindVault: Extension context invalidated. Please refresh the page.');
+    }
 }
 
 // Track form submissions for password capture
