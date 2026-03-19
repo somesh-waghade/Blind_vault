@@ -154,6 +154,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
   if (request.type === 'LOCK') {
     sessionStore = { vault: null, userId: null, derivedKey: null };
+    // DO NOT clear session storage for "Soft LOCK" in background (popup does it)
+    sendResponse({ success: true });
+  }
+
+  if (request.type === 'HARD_LOGOUT') {
+    sessionStore = { vault: null, userId: null, derivedKey: null };
     chrome.storage.session.clear();
     sendResponse({ success: true });
   }

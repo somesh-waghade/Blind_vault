@@ -74,19 +74,11 @@ navSettings.addEventListener('click', () => {
 
 // Toggle Auth Views
 tabLogin.addEventListener('click', () => {
-    currentMode = 'login';
-    tabLogin.classList.add('active');
-    tabRegister.classList.remove('active');
-    authBtn.innerText = 'Log In';
-    authHint.innerText = 'Enter your master password to unlock.';
+    showFullAuthScreen('login');
 });
 
 tabRegister.addEventListener('click', () => {
-    currentMode = 'register';
-    tabRegister.classList.add('active');
-    tabLogin.classList.remove('active');
-    authBtn.innerText = 'Create Account';
-    authHint.innerText = 'Choose a strong master password. It cannot be recovered!';
+    showFullAuthScreen('register');
 });
 
 // Handle Auth
@@ -365,11 +357,51 @@ async function checkAuth() {
 function showUnlockScreen() {
     authView.classList.remove('hidden');
     vaultView.classList.add('hidden');
-    tabRegister.classList.add('hidden'); // Hide registration on quick unlock
+    
+    // Hide tabs and username for simplified "Unlock" screen
+    document.querySelector('.tabs').classList.add('hidden');
+    document.getElementById('username').classList.add('hidden');
+    document.getElementById('unlock-actions').classList.remove('hidden');
+
     authBtn.innerText = 'Unlock Vault';
     authHint.innerText = 'Vault is locked. Enter password to view list.';
     currentMode = 'unlock';
 }
+
+function showFullAuthScreen(mode = 'login') {
+    authView.classList.remove('hidden');
+    vaultView.classList.add('hidden');
+    
+    // Show tabs and username for full login/register
+    document.querySelector('.tabs').classList.remove('hidden');
+    document.getElementById('username').classList.remove('hidden');
+    document.getElementById('unlock-actions').classList.add('hidden');
+    tabRegister.classList.remove('hidden');
+
+    currentMode = mode;
+    if (mode === 'login') {
+        tabLogin.classList.add('active');
+        tabRegister.classList.remove('active');
+        authBtn.innerText = 'Log In';
+        authHint.innerText = 'Enter your master password to unlock.';
+    } else {
+        tabLogin.classList.remove('active');
+        tabRegister.classList.add('active');
+        authBtn.innerText = 'Create Vault';
+        authHint.innerText = 'Choose a strong master password.';
+    }
+}
+
+// Add event listener for Hard Logout from Unlock Screen
+document.getElementById('hard-logout-link').onclick = (e) => {
+    e.preventDefault();
+    if (confirm('This will completely wipe your session. You will need to re-login next time.')) {
+        chrome.runtime.sendMessage({ type: 'HARD_LOGOUT' }); // Standard logout
+        chrome.storage.session.clear();
+        loggedInUserId = null;
+        showFullAuthScreen('login');
+    }
+};
 
 checkAuth();
 
