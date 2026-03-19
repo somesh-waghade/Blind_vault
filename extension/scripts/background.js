@@ -21,19 +21,23 @@ async function ensureSession() {
     if (sessionStore.userId && sessionStore.derivedKey) return true;
 
     return new Promise((resolve) => {
+        console.log('BlindVault: Checking session storage...');
         chrome.storage.session.get(['userId', 'keyJWK', 'vault'], async (result) => {
+            console.log('BlindVault: Storage result:', result.userId ? 'UserId found' : 'UserId NOT found', result.keyJWK ? 'Key found' : 'Key NOT found');
             if (result.userId && result.keyJWK) {
                 console.log('BlindVault: Restoring session from storage...');
                 sessionStore.userId = result.userId;
                 sessionStore.vault = result.vault || [];
                 try {
                     sessionStore.derivedKey = await CryptoModule.importKey(result.keyJWK);
+                    console.log('BlindVault: Key re-imported successfully');
                     resolve(true);
                 } catch (e) {
                     console.error('BlindVault: Failed to restore key:', e);
                     resolve(false);
                 }
             } else {
+                console.warn('BlindVault: No session data in storage. Please log in again.');
                 resolve(false);
             }
         });
