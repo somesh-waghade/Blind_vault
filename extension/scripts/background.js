@@ -125,14 +125,18 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
   if (request.type === 'GET_CREDENTIALS') {
     const host = request.host;
+    console.log('BlindVault: Searching credentials for host:', host);
     ensureSession().then(isActive => {
         if (!isActive || !sessionStore.vault) {
+            console.warn('BlindVault: Cannot provide credentials - Session inactive');
             sendResponse({ credentials: null });
             return;
         }
         const matches = sessionStore.vault.filter(cred => 
+            host.toLowerCase().includes(cred.site.toLowerCase()) ||
             cred.site.toLowerCase().includes(host.toLowerCase())
         );
+        console.log('BlindVault: Found', matches.length, 'matches for', host);
         sendResponse({ credentials: matches });
     });
     return true; // Async
