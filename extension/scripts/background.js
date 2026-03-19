@@ -81,6 +81,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
               .then(res => {
                   if (res.ok) {
                       console.log('BlindVault: Sync successful (HTTP 200)');
+                      
+                      // Broadcast update to Popup/Sidebar if open
+                      chrome.runtime.sendMessage({ 
+                          type: 'VAULT_UPDATED', 
+                          vault: sessionStore.vault 
+                      }).catch(() => {}); // Ignore if no listener (popup closed)
+
                       sendResponse({ success: true });
                   } else {
                       console.error('BlindVault: Sync failed (HTTP', res.status, ')');

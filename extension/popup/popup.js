@@ -273,15 +273,61 @@ function renderList(listToRender) {
                 <div class="site">${cred.site}</div>
                 <div class="user">${cred.username}</div>
             </div>
-            <button class="copy-btn">Copy</button>
+            <div class="item-actions">
+                <button class="copy-btn" title="Copy Password">Copy</button>
+                <button class="delete-btn" title="Delete">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18m-2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                </button>
+            </div>
         `;
         
         div.querySelector('.copy-btn').addEventListener('click', () => {
             copyToClipboard(cred.password, 'Password');
         });
 
+        div.querySelector('.delete-btn').addEventListener('click', async () => {
+            if (confirm(`Delete password for ${cred.site}?`)) {
+                allCredentials = allCredentials.filter(c => !(c.site === cred.site && c.username === cred.username));
+                await syncVault(allCredentials);
+                renderList(allCredentials);
+                showToast('Credential deleted');
+            }
+        });
+
         list.appendChild(div);
     });
+}
+
+async function syncVault(credentials) {
+    statusMsg.innerText = 'Syncing...';
+    try {
+        // 1. Encrypt updated vault
+        const { ciphertext, iv } = await CryptoModule.encrypt(JSON.stringify(credentials), derivedKey);
+        
+        // 2. Send to server
+        await fetch(`${API_URL}/vault`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                userId: loggedInUserId, 
+                encryptedData: JSON.stringify({ ciphertext, iv }) 
+            })
+        });
+
+        // 3. Update background session
+        const jwk = await CryptoModule.exportKey(derivedKey);
+        chrome.runtime.sendMessage({
+            type: 'SET_SESSION',
+            vault: credentials,
+            userId: loggedInUserId,
+            keyJWK: jwk
+        });
+    } catch (e) {
+        console.error('Sync error:', e);
+        showToast('Sync failed');
+    } finally {
+        statusMsg.innerText = `Welcome! 🔓`;
+    }
 }
 
 // Search Logic
