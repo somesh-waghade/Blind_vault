@@ -12,6 +12,11 @@ function detectAndFill() {
         chrome.runtime.sendMessage({ type: 'GET_CREDENTIALS', host: host }, (response) => {
             if (chrome.runtime.lastError) return;
 
+            if (response && response.error === 'Locked') {
+                console.warn('BlindVault: Autofill blocked. Please unlock the side panel.');
+                return;
+            }
+
             if (response && response.credentials && response.credentials.length > 0) {
                 console.log('BlindVault: Matching credentials found in vault');
                 const cred = response.credentials[0];

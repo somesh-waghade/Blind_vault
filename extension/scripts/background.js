@@ -126,18 +126,28 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.type === 'GET_CREDENTIALS') {
     const host = request.host;
     console.log('BlindVault: Searching credentials for host:', host);
-    ensureSession().then(isActive => {
-        if (!isActive || !sessionStore.vault) {
-            console.warn('BlindVault: Cannot provide credentials - Session inactive');
-            sendResponse({ credentials: null });
+    
+    // Check both session activity AND UI lock status
+    chrome.storage.session.get(['ui_unlocked'], (res) => {
+        if (!res.ui_unlocked) {
+            console.warn('BlindVault: Autofill blocked - Vault UI is locked');
+            sendResponse({ credentials: null, error: 'Locked' });
             return;
         }
-        const matches = sessionStore.vault.filter(cred => 
-            host.toLowerCase().includes(cred.site.toLowerCase()) ||
-            cred.site.toLowerCase().includes(host.toLowerCase())
-        );
-        console.log('BlindVault: Found', matches.length, 'matches for', host);
-        sendResponse({ credentials: matches });
+
+        ensureSession().then(isActive => {
+            if (!isActive || !sessionStore.vault) {
+                console.warn('BlindVault: Cannot provide credentials - Session inactive');
+                sendResponse({ credentials: null });
+                return;
+            }
+            const matches = sessionStore.vault.filter(cred => 
+                host.toLowerCase().includes(cred.site.toLowerCase()) ||
+                cred.site.toLowerCase().includes(host.toLowerCase())
+            );
+            console.log('BlindVault: Found', matches.length, 'matches for', host);
+            sendResponse({ credentials: matches });
+        });
     });
     return true; // Async
   }
