@@ -127,20 +127,28 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     const host = request.host;
     console.log('BlindVault: Searching credentials for host:', host);
     
-    // Check both session activity AND UI lock status
-    chrome.storage.session.get(['ui_unlocked'], (res) => {
-        if (!res.ui_unlocked) {
-            console.warn('BlindVault: Autofill blocked - Vault UI is locked');
-            sendResponse({ credentials: null, error: 'Locked' });
+    // 1. Check if session even exists (derivedKey in memory or keyJWK in session)
+    ensureSession().then(isActive => {
+        if (!isActive) {
+            console.log('BlindVault: No active session. Skipping autofill.');
+            sendResponse({ credentials: null, error: 'LoggedOut' });
             return;
         }
 
-        ensureSession().then(isActive => {
-            if (!isActive || !sessionStore.vault) {
-                console.warn('BlindVault: Cannot provide credentials - Session inactive');
+        // 2. Session exists, check if UI is unlocked
+        chrome.storage.session.get(['ui_unlocked'], (res) => {
+            if (!res.ui_unlocked) {
+                console.warn('BlindVault: Vault UI is locked. Prompting for quick unlock.');
+                sendResponse({ credentials: null, error: 'Locked' });
+                return;
+            }
+
+            // 3. Fully active and unlocked
+            if (!sessionStore.vault) {
                 sendResponse({ credentials: null });
                 return;
             }
+
             const matches = sessionStore.vault.filter(cred => 
                 host.toLowerCase().includes(cred.site.toLowerCase()) ||
                 cred.site.toLowerCase().includes(host.toLowerCase())
