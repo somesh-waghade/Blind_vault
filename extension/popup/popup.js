@@ -42,22 +42,28 @@ async function copyToClipboard(text, label) {
 const FIXED_SALT = new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]);
 
 // Navigation logic
-navVault.addEventListener('click', () => {
-    if (!loggedInUserId) return;
-    
-    settingsView.classList.add('hidden');
-    navVault.classList.add('active');
-    navSettings.classList.remove('active');
-
-    // Show either vault or unlock screen
-    chrome.storage.session.get(['ui_unlocked'], (res) => {
-        if (res.ui_unlocked) {
+async function revealVault() {
+    chrome.storage.session.get(['userId', 'keyJWK', 'ui_unlocked'], async (res) => {
+        if (res.ui_unlocked && res.keyJWK) {
+            // Restore key if missing
+            if (!derivedKey) {
+                derivedKey = await CryptoModule.importKey(res.keyJWK);
+            }
             vaultView.classList.remove('hidden');
             authView.classList.add('hidden');
+            fetchVault(res.userId, res.keyJWK);
         } else {
             showUnlockScreen();
         }
     });
+}
+
+navVault.addEventListener('click', () => {
+    if (!loggedInUserId) return;
+    settingsView.classList.add('hidden');
+    navVault.classList.add('active');
+    navSettings.classList.remove('active');
+    revealVault();
 });
 
 navSettings.addEventListener('click', () => {
@@ -402,6 +408,19 @@ document.getElementById('hard-logout-link').onclick = (e) => {
         showFullAuthScreen('login');
     }
 };
+
+// Listen for storage changes (for In-Page Unlock sync)
+chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === 'session' && changes.ui_unlocked) {
+        if (changes.ui_unlocked.newValue === true && !vaultView.classList.contains('hidden')) {
+            // If we are on the vault tab and it just got unlocked elsewhere, reveal it
+            revealVault();
+        } else if (changes.ui_unlocked.newValue === undefined) {
+            // Locked elsewhere
+            performLock();
+        }
+    }
+});
 
 checkAuth();
 
