@@ -200,7 +200,16 @@ window.addEventListener('load', () => {
     });
 });
 
-setInterval(() => {
-    detectAndFill();
-    trackFormSubmissions();
+const bvInterval = setInterval(() => {
+    try {
+        if (!chrome.runtime?.id) {
+            console.log('BlindVault: Cleaning up orphaned script...');
+            clearInterval(bvInterval);
+            return;
+        }
+        detectAndFill();
+        trackFormSubmissions();
+    } catch (e) {
+        clearInterval(bvInterval);
+    }
 }, 3000);
