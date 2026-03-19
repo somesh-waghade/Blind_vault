@@ -58,12 +58,12 @@ function showQuickUnlockPrompt(targetField, host) {
     const container = document.createElement('div');
     container.id = 'bv-quick-unlock';
     
-    // Position near the field
+    // Position near the field (using viewport coordinates for fixed position)
     const rect = targetField.getBoundingClientRect();
     Object.assign(container.style, {
         position: 'fixed',
-        top: `${rect.top + window.scrollY + rect.height + 5}px`,
-        left: `${rect.left + window.scrollX}px`,
+        top: `${rect.bottom + 5}px`,
+        left: `${rect.left}px`,
         width: '240px',
         zIndex: '2147483647',
         animation: 'bvFadeIn 0.2s ease-out'
