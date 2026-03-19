@@ -1,3 +1,5 @@
+importScripts('crypto.js');
+
 // In-memory state (lost when browser/extension restarts)
 let sessionStore = {
     vault: null,
@@ -11,8 +13,6 @@ chrome.runtime.onInstalled.addListener(() => {
   chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true })
     .catch((error) => console.error(error));
 });
-
-importScripts('crypto.js');
 
 const API_URL = 'http://localhost:5000/api';
 

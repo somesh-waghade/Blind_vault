@@ -96,17 +96,19 @@ function showSavePrompt(site, username, password) {
 
     // Modern Side-Docked Style
     Object.assign(prompt.style, {
+        all: 'initial', // Reset all inherited styles
         position: 'fixed',
         top: '20px',
         right: '20px',
-        width: '240px',
+        width: '260px',
         backgroundColor: '#1e1e1e',
         border: '1px solid #333',
         borderRadius: '12px',
         padding: '16px',
         boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
-        zIndex: '999999',
-        animation: 'bvSlideIn 0.4s ease-out'
+        zIndex: '2147483647', // Max possible z-index
+        animation: 'bvSlideIn 0.4s ease-out',
+        display: 'block'
     });
 
     // Simple Animation
