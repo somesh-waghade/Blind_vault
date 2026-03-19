@@ -334,6 +334,34 @@ async function syncVault(credentials) {
     }
 }
 
+// Check for existing session on startup
+async function checkAuth() {
+    chrome.storage.session.get(['userId', 'keyJWK', 'ui_unlocked'], async (res) => {
+        if (res.userId && res.keyJWK) {
+            console.log('BlindVault: Existing session found, UI Locked:', !res.ui_unlocked);
+            loggedInUserId = res.userId;
+            if (!res.ui_unlocked) {
+                showUnlockScreen();
+            } else {
+                const key = await CryptoModule.importKey(res.keyJWK);
+                derivedKey = key;
+                fetchVault(res.userId, res.keyJWK);
+            }
+        }
+    });
+}
+
+function showUnlockScreen() {
+    authView.classList.remove('hidden');
+    vaultView.classList.add('hidden');
+    tabRegister.classList.add('hidden'); // Hide registration on quick unlock
+    authBtn.innerText = 'Unlock Vault';
+    authHint.innerText = 'Vault is locked. Enter password to view list.';
+    currentMode = 'unlock';
+}
+
+checkAuth();
+
 // Search Logic
 document.getElementById('vault-search').addEventListener('input', (e) => {
     const query = e.target.value.toLowerCase();
