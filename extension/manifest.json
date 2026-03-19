@@ -4,6 +4,7 @@
   "version": "1.0",
   "description": "ZKP-Based Privacy Preserving Password Manager",
   "permissions": ["storage", "activeTab", "scripting", "sidePanel"],
+  "host_permissions": ["http://localhost:5000/*"],
   "content_security_policy": {
     "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
   },

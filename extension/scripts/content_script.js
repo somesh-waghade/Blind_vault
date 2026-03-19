@@ -81,57 +81,68 @@ function showSavePrompt(site, username, password) {
     // Check if prompt already exists
     if (document.getElementById('bv-save-prompt')) return;
 
-    const prompt = document.createElement('div');
-    prompt.id = 'bv-save-prompt';
-    prompt.innerHTML = `
-        <div style="font-family: 'Inter', sans-serif; font-size: 14px; color: white;">
-            <div style="font-weight: bold; color: #f6851b; margin-bottom: 4px;">Save to BlindVault?</div>
-            <div style="font-size: 12px; margin-bottom: 12px; color: #a0a0a0;">Do you want to save the password for <b>${site}</b>?</div>
-            <div style="display: flex; gap: 8px;">
-                <button id="bv-save-confirm" style="background: #f6851b; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: 600;">Save</button>
-                <button id="bv-save-cancel" style="background: #333; color: #a0a0a0; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer;">Never</button>
+    const container = document.createElement('div');
+    container.id = 'bv-save-prompt';
+    
+    // Modern Side-Docked Style for the container
+    Object.assign(container.style, {
+        position: 'fixed',
+        top: '20px',
+        right: '20px',
+        width: '280px',
+        zIndex: '2147483647',
+        animation: 'bvSlideIn 0.4s ease-out'
+    });
+
+    const shadow = container.attachShadow({ mode: 'open' });
+    shadow.innerHTML = `
+        <style>
+            @keyframes bvSlideIn { from { transform: translateX(300px); } to { transform: translateX(0); } }
+            .prompt {
+                font-family: 'Inter', system-ui, -apple-system, sans-serif;
+                font-size: 14px;
+                color: white;
+                background-color: #1e1e1e;
+                border: 1px solid #333;
+                border-radius: 12px;
+                padding: 16px;
+                boxShadow: 0 4px 20px rgba(0,0,0,0.5);
+                display: block;
+            }
+            .title { font-weight: bold; color: #f6851b; margin-bottom: 4px; }
+            .subtitle { font-size: 12px; margin-bottom: 12px; color: #a0a0a0; }
+            .btn-group { display: flex; gap: 8px; }
+            button { border: none; padding: 6px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; transition: opacity 0.2s; }
+            button:hover { opacity: 0.9; }
+            .save-btn { background: #f6851b; color: white; }
+            .cancel-btn { background: #333; color: #a0a0a0; }
+        </style>
+        <div class="prompt">
+            <div class="title">Save to BlindVault?</div>
+            <div class="subtitle">Do you want to save the password for <b>${site}</b>?</div>
+            <div class="btn-group">
+                <button class="save-btn" id="save">Save</button>
+                <button class="cancel-btn" id="cancel">Never</button>
             </div>
         </div>
     `;
 
-    // Modern Side-Docked Style
-    Object.assign(prompt.style, {
-        all: 'initial', // Reset all inherited styles
-        position: 'fixed',
-        top: '20px',
-        right: '20px',
-        width: '260px',
-        backgroundColor: '#1e1e1e',
-        border: '1px solid #333',
-        borderRadius: '12px',
-        padding: '16px',
-        boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
-        zIndex: '2147483647', // Max possible z-index
-        animation: 'bvSlideIn 0.4s ease-out',
-        display: 'block'
-    });
+    document.body.appendChild(container);
 
-    // Simple Animation
-    const style = document.createElement('style');
-    style.innerHTML = `@keyframes bvSlideIn { from { transform: translateX(300px); } to { transform: translateX(0); } }`;
-    document.head.appendChild(style);
-
-    document.body.appendChild(prompt);
-
-    document.getElementById('bv-save-confirm').onclick = () => {
+    shadow.getElementById('save').onclick = () => {
         chrome.runtime.sendMessage({ 
             type: 'SAVE_NEW_CREDENTIAL', 
             credential: { site, username, password } 
         }, (response) => {
-            prompt.remove();
+            container.remove();
             if (response && response.success) {
                 console.log('BlindVault: Credential saved successfully');
             }
         });
     };
 
-    document.getElementById('bv-save-cancel').onclick = () => {
-        prompt.remove();
+    shadow.getElementById('cancel').onclick = () => {
+        container.remove();
     };
 }
 

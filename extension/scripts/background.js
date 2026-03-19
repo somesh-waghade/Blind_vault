@@ -18,22 +18,29 @@ const API_URL = 'http://localhost:5000/api';
 
 // Listen for messages from Popup and Content Scripts
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  console.log('BlindVault: Received message:', request.type);
+
   if (request.type === 'SAVE_NEW_CREDENTIAL') {
+      console.log('BlindVault: Save request for:', request.credential.site);
+      
       if (!sessionStore.userId || !sessionStore.derivedKey) {
-          console.warn('Save failed: No active session');
+          console.error('BlindVault: Save failed - No active session (UserId or Key missing)');
           sendResponse({ success: false, error: 'Locked' });
           return;
       }
 
       const { site, username, password } = request.credential;
+      console.log('BlindVault: Current vault size:', sessionStore.vault ? sessionStore.vault.length : 0);
       
       // Update in-memory vault
       if (!sessionStore.vault) sessionStore.vault = [];
       sessionStore.vault.push({ site, username, password });
 
       // Encrypt and Sync
+      console.log('BlindVault: Starting encryption...');
       CryptoModule.encrypt(JSON.stringify(sessionStore.vault), sessionStore.derivedKey)
           .then(({ ciphertext, iv }) => {
+              console.log('BlindVault: Encryption complete. Syncing to server...');
               return fetch(`${API_URL}/vault`, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
@@ -45,14 +52,15 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           })
           .then(res => {
               if (res.ok) {
-                  console.log('Sync successful');
+                  console.log('BlindVault: Sync successful (HTTP 200)');
                   sendResponse({ success: true });
               } else {
+                  console.error('BlindVault: Sync failed (HTTP', res.status, ')');
                   sendResponse({ success: false });
               }
           })
           .catch(err => {
-              console.error('Save error:', err);
+              console.error('BlindVault: Fatal save error:', err);
               sendResponse({ success: false });
           });
 
@@ -62,6 +70,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.type === 'SET_SESSION') {
     sessionStore.vault = request.vault;
     sessionStore.userId = request.userId;
+    
+    // Persist for service worker restarts
+    chrome.storage.session.set({ 
+        userId: request.userId, 
+        keyJWK: request.keyJWK, 
+        vault: request.vault 
+    });
+
     CryptoModule.importKey(request.keyJWK).then(key => {
         sessionStore.derivedKey = key;
         console.log('Session state updated with secure key');
@@ -71,19 +87,22 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
   if (request.type === 'GET_CREDENTIALS') {
     const host = request.host;
-    if (!sessionStore.vault) {
-        sendResponse({ credentials: null });
-        return;
-    }
-    // Find matching credentials for the domain
-    const matches = sessionStore.vault.filter(cred => 
-        cred.site.toLowerCase().includes(host.toLowerCase())
-    );
-    sendResponse({ credentials: matches });
+    ensureSession().then(isActive => {
+        if (!isActive || !sessionStore.vault) {
+            sendResponse({ credentials: null });
+            return;
+        }
+        const matches = sessionStore.vault.filter(cred => 
+            cred.site.toLowerCase().includes(host.toLowerCase())
+        );
+        sendResponse({ credentials: matches });
+    });
+    return true; // Async
   }
 
   if (request.type === 'LOCK') {
     sessionStore = { vault: null, userId: null, derivedKey: null };
+    chrome.storage.session.clear();
     sendResponse({ success: true });
   }
 
