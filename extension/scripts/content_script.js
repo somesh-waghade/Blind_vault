@@ -183,7 +183,7 @@ function showSavePrompt(site, username, password) {
 
 // Run on load and periodically
 window.addEventListener('load', () => {
-    detectAndFill();
+    // Only track submissions automatically. detectAndFill is now user-action driven
     trackFormSubmissions();
     
     // Check for pending saves from previous page load
@@ -198,6 +198,16 @@ window.addEventListener('load', () => {
             chrome.storage.local.remove('bv_pending_save');
         }
     });
+
+    // Add interaction listeners for On-Demand Autofill
+    document.addEventListener('focusin', (e) => {
+        if (e.target.tagName === 'INPUT' && (e.target.type === 'password' || e.target.type === 'text' || e.target.type === 'email')) {
+            // Only trigger if it looks like a login field or we are in a form
+            if (e.target.type === 'password' || e.target.name?.includes('user') || e.target.id?.includes('user')) {
+                detectAndFill();
+            }
+        }
+    });
 });
 
 const bvInterval = setInterval(() => {
@@ -207,7 +217,8 @@ const bvInterval = setInterval(() => {
             clearInterval(bvInterval);
             return;
         }
-        detectAndFill();
+        // Only track submissions automatically. 
+        // detectAndFill is now user-action driven for better UX.
         trackFormSubmissions();
     } catch (e) {
         clearInterval(bvInterval);

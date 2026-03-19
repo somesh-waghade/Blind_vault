@@ -102,6 +102,8 @@ authBtn.addEventListener('click', async () => {
 
     if (currentMode === 'register') {
         registerUser(username, password);
+    } else if (currentMode === 'unlock') {
+        loginUser(username, password); // Re-run login to verify and unlock
     } else {
         loginUser(username, password);
     }
@@ -236,6 +238,8 @@ async function fetchVault(userId, jwk) {
             keyJWK: jwk
         }, (res) => {
             console.log('BlindVault: Background session sync response:', res);
+            // Set UI as unlocked for this session
+            chrome.storage.session.set({ ui_unlocked: true });
         });
 
         displayVault(credentials);
