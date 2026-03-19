@@ -400,15 +400,17 @@ document.getElementById('add-btn').addEventListener('click', async () => {
 
 // Lock/Logout logic
 function performLock() {
-    chrome.runtime.sendMessage({ type: 'LOCK' });
+    // Soft Lock: Clear UI unlock state but keep background capture key
+    chrome.storage.session.remove('ui_unlocked');
+    
     vaultView.classList.add('hidden');
     settingsView.classList.add('hidden');
     authView.classList.remove('hidden');
-    statusMsg.innerText = 'Securely store your passwords';
+    showUnlockScreen();
+    
     document.getElementById('password').value = '';
     derivedKey = null;
-    loggedInUserId = null;
-    loggedInUsername = null;
+    // We keep loggedInUserId for the unlock screen
     navVault.classList.add('active');
     navSettings.classList.remove('active');
 }
