@@ -13,51 +13,151 @@ function detectAndFill() {
             if (chrome.runtime.lastError) return;
 
             if (response && response.error === 'Locked') {
-                console.warn('BlindVault: Autofill blocked. Please unlock the side panel.');
+                console.warn('BlindVault: Vault is locked. Showing quick unlock prompt.');
+                showQuickUnlockPrompt(passwordFields[0], host);
                 return;
             }
 
             if (response && response.credentials && response.credentials.length > 0) {
                 console.log('BlindVault: Matching credentials found in vault');
                 const cred = response.credentials[0];
-                
-                passwordFields.forEach((passField, index) => {
-                    // 1. Fill Password
-                    if (!passField.value) {
-                        passField.value = cred.password;
-                        passField.dispatchEvent(new Event('input', { bubbles: true }));
-                        passField.dispatchEvent(new Event('change', { bubbles: true }));
-                    }
-
-                    // 2. Find Username (more aggressive)
-                    // Try nearby, then by common selectors
-                    let userField = null;
-                    const container = passField.closest('form') || document;
-                    
-                    userField = container.querySelector('input[type="text"], input[type="email"], input[name*="user"], input[name*="login"], input[id*="user"], input[id*="login"]');
-                    
-                    // If multiple password fields (e.g. login + register on same page), 
-                    // try to find the one closest to THIS password field
-                    if (container === document) {
-                        // Very basic: just look at the previous sibling if possible
-                        const inputs = Array.from(document.querySelectorAll('input'));
-                        const pIdx = inputs.indexOf(passField);
-                        if (pIdx > 0 && inputs[pIdx-1].type !== 'password') {
-                            userField = inputs[pIdx-1];
-                        }
-                    }
-
-                    if (userField && !userField.value) {
-                        console.log('BlindVault: Filling username in field', userField.name || userField.id || 'unknown');
-                        userField.value = cred.username;
-                        userField.dispatchEvent(new Event('input', { bubbles: true }));
-                        userField.dispatchEvent(new Event('change', { bubbles: true }));
-                    }
-                });
+                fillForm(cred, passwordFields);
             } else {
                 console.log('BlindVault: No matches for', host);
             }
         });
+    } catch (e) {
+        console.warn('BlindVault: Context invalidated');
+    }
+}
+
+function fillForm(cred, passwordFields) {
+    passwordFields.forEach((passField) => {
+        // 1. Fill Password
+        if (!passField.value) {
+            passField.value = cred.password;
+            passField.dispatchEvent(new Event('input', { bubbles: true }));
+            passField.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+
+        // 2. Find Username (more aggressive)
+        const container = passField.closest('form') || document;
+        const userField = container.querySelector('input[type="text"], input[type="email"], input[name*="user"], input[name*="login"], input[id*="user"], input[id*="login"]');
+        
+        if (userField && !userField.value) {
+            userField.value = cred.username;
+            userField.dispatchEvent(new Event('input', { bubbles: true }));
+            userField.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+    });
+}
+
+function showQuickUnlockPrompt(targetField, host) {
+    if (document.getElementById('bv-quick-unlock')) return;
+
+    const container = document.createElement('div');
+    container.id = 'bv-quick-unlock';
+    
+    // Position near the field
+    const rect = targetField.getBoundingClientRect();
+    Object.assign(container.style, {
+        position: 'fixed',
+        top: `${rect.top + window.scrollY + rect.height + 5}px`,
+        left: `${rect.left + window.scrollX}px`,
+        width: '240px',
+        zIndex: '2147483647',
+        animation: 'bvFadeIn 0.2s ease-out'
+    });
+
+    const shadow = container.attachShadow({ mode: 'open' });
+    shadow.innerHTML = `
+        <style>
+            @keyframes bvFadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+            .mini-prompt {
+                font-family: 'Inter', system-ui, sans-serif;
+                background: #1e1e1e;
+                border: 1px solid #f6851b;
+                border-radius: 8px;
+                padding: 10px;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+                color: white;
+            }
+            .title { font-size: 11px; font-weight: bold; color: #f6851b; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+            input {
+                width: 100%;
+                background: #2a2a2a;
+                border: 1px solid #333;
+                border-radius: 4px;
+                color: white;
+                font-size: 13px;
+                padding: 6px;
+                box-sizing: border-box;
+                margin-bottom: 8px;
+                outline: none;
+            }
+            input:focus { border-color: #f6851b; }
+            button {
+                width: 100%;
+                background: #f6851b;
+                color: white;
+                border: none;
+                border-radius: 4px;
+                padding: 6px;
+                font-weight: 600;
+                cursor: pointer;
+                font-size: 12px;
+            }
+            .cancel { font-size: 10px; color: #a0a0a0; text-align: center; margin-top: 6px; cursor: pointer; text-decoration: underline; }
+        </style>
+        <div class="mini-prompt" id="prompt-body">
+            <div class="title">BlindVault Locked</div>
+            <input type="password" id="bv-pass" placeholder="Master Password" autofocus>
+            <button id="bv-unlock-btn">Unlock & Fill</button>
+            <div class="cancel" id="bv-cancel">Cancel</div>
+        </div>
+    `;
+
+    document.body.appendChild(container);
+
+    const input = shadow.getElementById('bv-pass');
+    const btn = shadow.getElementById('bv-unlock-btn');
+
+    const handleUnlock = () => {
+        const password = input.value;
+        if (!password) return;
+        
+        btn.innerText = 'Unlocking...';
+        btn.disabled = true;
+
+        chrome.runtime.sendMessage({ 
+            type: 'QUICK_UNLOCK', 
+            password, 
+            host 
+        }, (response) => {
+            if (response && response.success) {
+                container.remove();
+                if (response.credentials && response.credentials.length > 0) {
+                    fillForm(response.credentials[0], document.querySelectorAll('input[type="password"]'));
+                }
+            } else {
+                btn.innerText = 'Incorrect! Try again';
+                btn.disabled = false;
+                btn.style.background = '#ef4444';
+                setTimeout(() => {
+                    btn.innerText = 'Unlock & Fill';
+                    btn.style.background = '#f6851b';
+                }, 2000);
+            }
+        });
+    };
+
+    btn.onclick = handleUnlock;
+    input.onkeydown = (e) => { if (e.key === 'Enter') handleUnlock(); };
+    shadow.getElementById('bv-cancel').onclick = () => container.remove();
+    
+    // Auto-focus the input
+    setTimeout(() => input.focus(), 100);
+}
     } catch (e) {
         console.warn('BlindVault: Context invalidated');
     }
