@@ -1,4 +1,4 @@
-importScripts('crypto.js');
+importScripts('snarkjs.min.js', 'crypto.js');
 
 // In-memory state (lost when browser/extension restarts)
 let sessionStore = {
@@ -156,6 +156,63 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     sessionStore = { vault: null, userId: null, derivedKey: null };
     chrome.storage.session.clear();
     sendResponse({ success: true });
+  }
+
+  if (request.type === 'QUICK_UNLOCK') {
+    const { password, host } = request;
+    console.log('BlindVault: Quick Unlock requested for', host);
+
+    // 1. Derive key and check ZKP in background
+    (async () => {
+        try {
+            // Re-use logic from popup.js
+            const encoder = new TextEncoder();
+            const bytes = encoder.encode(password);
+            const passwordNum = BigInt('0x' + Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('')) % BigInt("21888242871839275222246405745257275088548364400416034343698204186575808495617");
+            
+            // To verify, we need the stored hash. Let's get it from the session storage
+            chrome.storage.session.get(['userId', 'vault'], async (res) => {
+                if (!res.userId) {
+                    sendResponse({ success: false, error: 'No Session' });
+                    return;
+                }
+
+                // In a real app, we would fetch the user's passwordHash from the server
+                // But for "Quick Unlock", we can just try to derive the same key we already have!
+                // If it matches what we have in sessionStore, it's valid.
+                
+                // OR better: Ask server for verification
+                // Let's keep it simple: derive key and if it imports correctly, we are good.
+                // Wait, we don't know the salt... FIXED_SALT is 1..16
+                const FIXED_SALT = new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]);
+                const key = await CryptoModule.deriveKey(password, FIXED_SALT);
+                const keyJWK = await CryptoModule.exportKey(key);
+                
+                // Compare with stored session key
+                chrome.storage.session.get(['keyJWK'], (stored) => {
+                    if (stored.keyJWK && stored.keyJWK.k === keyJWK.k) {
+                        console.log('BlindVault: Quick Unlock successful');
+                        chrome.storage.session.set({ ui_unlocked: true });
+                        
+                        // Return matches immediately
+                        const matches = sessionStore.vault ? sessionStore.vault.filter(cred => 
+                            host.toLowerCase().includes(cred.site.toLowerCase()) ||
+                            cred.site.toLowerCase().includes(host.toLowerCase())
+                        ) : [];
+                        
+                        sendResponse({ success: true, credentials: matches });
+                    } else {
+                        console.warn('BlindVault: Quick Unlock failed - Incorrect password');
+                        sendResponse({ success: false, error: 'Incorrect Password' });
+                    }
+                });
+            });
+        } catch (e) {
+            console.error('BlindVault: Quick Unlock error:', e);
+            sendResponse({ success: false, error: e.message });
+        }
+    })();
+    return true; // Async
   }
 
   return true; // Keep message channel open for async response
