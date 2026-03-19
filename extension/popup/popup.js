@@ -44,16 +44,27 @@ const FIXED_SALT = new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14
 // Navigation logic
 navVault.addEventListener('click', () => {
     if (!loggedInUserId) return;
-    vaultView.classList.remove('hidden');
+    
     settingsView.classList.add('hidden');
     navVault.classList.add('active');
     navSettings.classList.remove('active');
+
+    // Show either vault or unlock screen
+    chrome.storage.session.get(['ui_unlocked'], (res) => {
+        if (res.ui_unlocked) {
+            vaultView.classList.remove('hidden');
+            authView.classList.add('hidden');
+        } else {
+            showUnlockScreen();
+        }
+    });
 });
 
 navSettings.addEventListener('click', () => {
     if (!loggedInUserId) return;
     settingsView.classList.remove('hidden');
     vaultView.classList.add('hidden');
+    authView.classList.add('hidden'); // CRITICAL: Hide unlock screen when in settings
     navSettings.classList.add('active');
     navVault.classList.remove('active');
     
@@ -429,18 +440,17 @@ document.getElementById('add-btn').addEventListener('click', async () => {
 // Lock/Logout logic
 function performLock() {
     // Soft Lock: Clear UI unlock state but keep background capture key
-    chrome.storage.session.remove('ui_unlocked');
-    
-    vaultView.classList.add('hidden');
-    settingsView.classList.add('hidden');
-    authView.classList.remove('hidden');
-    showUnlockScreen();
-    
-    document.getElementById('password').value = '';
-    derivedKey = null;
-    // We keep loggedInUserId for the unlock screen
-    navVault.classList.add('active');
-    navSettings.classList.remove('active');
+    chrome.storage.session.remove('ui_unlocked', () => {
+        vaultView.classList.add('hidden');
+        settingsView.classList.add('hidden');
+        showUnlockScreen();
+        
+        document.getElementById('password').value = '';
+        derivedKey = null;
+        
+        navVault.classList.add('active');
+        navSettings.classList.remove('active');
+    });
 }
 
 document.getElementById('lock-btn').addEventListener('click', performLock);
