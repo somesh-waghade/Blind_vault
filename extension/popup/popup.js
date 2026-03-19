@@ -365,3 +365,11 @@ function performLock() {
 
 document.getElementById('lock-btn').addEventListener('click', performLock);
 document.getElementById('logout-btn').addEventListener('click', performLock);
+
+// Real-time synchronization
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.type === 'VAULT_UPDATED' && request.vault) {
+        console.log('BlindVault: Received real-time update');
+        displayVault(request.vault);
+    }
+});
