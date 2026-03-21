@@ -11,8 +11,8 @@ BlindVault is designed as a **privacy-first** application where the server never
 - **UI:** Built with HTML/CSS/Vanilla JS (Manifest V3).
 - **ZKP Module:** Generates cryptographic proofs using `snarkjs` and the `auth.circom` circuit.
 - **Crypto Module:** Handles key derivation (PBKDF2) and data encryption/decryption (AES-GCM) via the Web Crypto API.
-- **Content Scripts:** Injects autofill logic into third-party websites.
-
+- **Content Scripts:** Injects autofill logic, background password harvesting, and secure Shadow DOM prompts directly into third-party websites. It communicates with the background worker to ensure UI state sync.
+- **Background Worker:** A Manifest V3 Service Worker that manages ephemeral state (`chrome.storage.session`), handles encryption for new passwords harvested in the background, and verifies Quick Unlock requests locally to prevent unnecessary server trips.
 ### 2. Backend Server (Modular Monolith)
 - **Runtime:** Node.js + Express.
 - **Database:** MongoDB (using Mongoose).

@@ -21,3 +21,9 @@ Use these notes to prepare for your project presentation or technical interviews
 
 ### Q4: If the user forgets their master password, can you recover it?
 **Answer:** **No.** This is a trade-off of the "Zero-Knowledge" architecture. Since we don't store the password or the encryption key, there is no "Forgot Password" backdoor. This is a deliberate security choice to ensure maximum privacy.
+
+### Q5: How did you securely implement the floating "Quick Unlock" prompt on webpages?
+**Answer:** Injecting UI directly into untrusted web pages is dangerous because the site's JavaScript could read the inputs. I mitigated this by rendering the prompt inside an isolated **Shadow DOM** created from the extension's protected Content Script context. This creates a hard boundary that host-page scripts cannot pierce, preventing XSS attacks from stealing the master password natively typed into the page.
+
+### Q6: How does the extension auto-save passwords without forcing the user to log in every 5 seconds?
+**Answer:** I engineered a **Soft Lock** session model. When a user "locks" the vault, the frontend UI is hidden and requires the master password to unlock. However, the background Service Worker retains the symmetric encryption key securely inside `chrome.storage.session` (which lives only in RAM and dies with the browser process). This allows the extension to silently capture and encrypt *new* credentials while browsing, without exposing the existing vault data to the UI or demanding constant re-authentication.

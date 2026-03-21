@@ -5,7 +5,10 @@
 ## 🚀 Key Features
 - **ZKP Authentication:** Log in without ever sending your master password to the server.
 - **Zero-Knowledge Storage:** Everything is encrypted client-side using the Web Crypto API.
-- **Auto-Fill:** Detected login forms are automatically filled for ease of use.
+- **Background Auto-Save:** Silently captures and encrypts new passwords as you log into websites.
+- **On-Demand Autofill & Quick Unlock:** Securely fill forms using an isolated, in-page Shadow DOM prompt without opening the main extension.
+- **Soft Lock Sessions:** Keeps your UI secure while keeping the background capture abilities active.
+- **Interactive Aesthetic UI:** Features a sleek dark/light mode and an animated geometric mascot that tracks your cursor.
 - **Secure Sync:** Your encrypted vault is synced to the cloud, accessible only by you.
 
 ## 🛠️ Technology Stack
