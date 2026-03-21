@@ -1,4 +1,4 @@
-importScripts('crypto.js');
+importScripts('config.js', 'crypto.js');
 
 // In-memory state (lost when browser/extension restarts)
 let sessionStore = {
@@ -14,7 +14,7 @@ chrome.runtime.onInstalled.addListener(() => {
     .catch((error) => console.error(error));
 });
 
-const API_URL = 'http://localhost:5000/api';
+const API_URL = CONFIG.API_URL;
 
 // Helper to ensure session is loaded from storage (fixes MV3 service worker termination)
 async function ensureSession() {

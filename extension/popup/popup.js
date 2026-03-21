@@ -1,4 +1,4 @@
-const API_URL = 'http://localhost:5000/api';
+const API_URL = CONFIG.API_URL;
 
 // UI Elements
 const authView = document.getElementById('auth-view');
