@@ -15,6 +15,16 @@
     --font-inter: 'Inter', sans-serif;
 }
 
+body.light-theme {
+    --bg: #f8f9fa;
+    --surface: #ffffff;
+    --surface-hover: #f1f3f5;
+    --text: #212529;
+    --text-muted: #6c757d;
+    --border: #dee2e6;
+    --shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
 * {
     box-sizing: border-box;
 }
@@ -285,8 +295,14 @@ button#auth-btn:active, button#add-btn:active {
     color: var(--text-muted);
 }
 
+.item-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
 .copy-btn {
-    background: #2d2d2d;
+    background: var(--surface);
     border: 1px solid var(--border);
     padding: 10px 14px;
     border-radius: 8px;
@@ -295,11 +311,36 @@ button#auth-btn:active, button#add-btn:active {
     font-size: 0.85rem;
     color: var(--text-muted);
     transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .copy-btn:hover {
     color: var(--success);
     border-color: var(--success);
+    background: rgba(0, 255, 163, 0.1);
+}
+
+.delete-btn {
+    background: rgba(239, 68, 68, 0.05);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    padding: 10px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    color: var(--danger);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.delete-btn:hover {
+    background: var(--danger);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.35);
+    border-color: var(--danger);
 }
 
 /* Settings View */
@@ -373,6 +414,31 @@ select {
     border: 1px solid var(--border);
     border-radius: 8px;
     outline: none;
+}
+
+.theme-toggle {
+    display: flex;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 4px;
+}
+
+.theme-toggle button {
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.theme-toggle button.active {
+    background: var(--primary);
+    color: white;
 }
 
 .danger-btn {

@@ -544,6 +544,37 @@ function performLock() {
 document.getElementById('lock-btn').addEventListener('click', performLock);
 document.getElementById('logout-btn').addEventListener('click', performLock);
 
+// Theme Toggle Logic
+const btnThemeLight = document.getElementById('theme-light');
+const btnThemeDark = document.getElementById('theme-dark');
+
+function applyTheme(theme) {
+    if (theme === 'light') {
+        document.body.classList.add('light-theme');
+        btnThemeLight.classList.add('active');
+        btnThemeDark.classList.remove('active');
+    } else {
+        document.body.classList.remove('light-theme');
+        btnThemeDark.classList.add('active');
+        btnThemeLight.classList.remove('active');
+    }
+}
+
+// Load saved theme
+chrome.storage.local.get(['bv_theme'], (res) => {
+    applyTheme(res.bv_theme || 'dark');
+});
+
+btnThemeLight.addEventListener('click', () => {
+    applyTheme('light');
+    chrome.storage.local.set({ bv_theme: 'light' });
+});
+
+btnThemeDark.addEventListener('click', () => {
+    applyTheme('dark');
+    chrome.storage.local.set({ bv_theme: 'dark' });
+});
+
 // Real-time synchronization
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.type === 'VAULT_UPDATED' && request.vault) {
