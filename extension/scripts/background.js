@@ -205,8 +205,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 // Compare with stored session key
                 chrome.storage.session.get(['keyJWK'], (stored) => {
                     if (stored.keyJWK && stored.keyJWK.k === keyJWK.k) {
-                        console.log('BlindVault: Quick Unlock successful');
-                        chrome.storage.session.set({ ui_unlocked: true });
+                        console.log('BlindVault: Quick Unlock successful (One-Time)');
+                        
+                        // NOTE: We intentionally DO NOT set { ui_unlocked: true } here anymore.
+                        // Quick Unlock is isolated and only fills the current page one time.
+                        // The main vault UI remains locked.
                         
                         // Return matches immediately
                         const matches = sessionStore.vault ? sessionStore.vault.filter(cred => 
