@@ -1,5 +1,21 @@
 console.log('BlindVault Content Script Loaded');
 
+// Global Theme State
+let currentTheme = 'dark';
+chrome.storage.local.get(['bv_theme'], (res) => {
+    if (res.bv_theme) currentTheme = res.bv_theme;
+});
+chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === 'local' && changes.bv_theme) {
+        currentTheme = changes.bv_theme.newValue;
+        const unlock = document.getElementById('bv-quick-unlock');
+        if (unlock) unlock.shadowRoot.querySelector('.mini-prompt').className = `mini-prompt ${currentTheme}-theme`;
+        
+        const save = document.getElementById('bv-save-prompt');
+        if (save) save.shadowRoot.querySelector('.prompt').className = `prompt ${currentTheme}-theme`;
+    }
+});
+
 function detectAndFill(specificField = null) {
     const passwordFields = document.querySelectorAll('input[type="password"]');
     if (passwordFields.length === 0) return;
@@ -80,29 +96,46 @@ function showQuickUnlockPrompt(targetField, host) {
     shadow.innerHTML = `
         <style>
             .mini-prompt {
+                --bg: #1e1e1e;
+                --text: #ffffff;
+                --border: #f6851b;
+                --input-bg: #2a2a2a;
+                --input-border: #444;
+                --cancel: #888;
+                
                 font-family: 'Inter', system-ui, sans-serif;
-                background: #1e1e1e;
-                border: 2px solid #f6851b;
+                background: var(--bg);
+                border: 2px solid var(--border);
                 border-radius: 12px;
                 padding: 12px;
                 box-shadow: 0 8px 32px rgba(0,0,0,0.6);
-                color: white;
+                color: var(--text);
                 animation: bvSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+                transition: background 0.3s, color 0.3s;
+            }
+            .light-theme {
+                --bg: #ffffff;
+                --text: #212529;
+                --input-bg: #f8f9fa;
+                --input-border: #dee2e6;
+                --cancel: #6c757d;
+                box-shadow: 0 8px 32px rgba(0,0,0,0.15);
             }
             @keyframes bvSlideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
             .title { font-size: 11px; font-weight: bold; color: #f6851b; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
             input {
                 width: 100%;
-                background: #2a2a2a;
-                border: 1px solid #444;
+                background: var(--input-bg);
+                border: 1px solid var(--input-border);
                 border-radius: 6px;
-                color: white;
+                color: var(--text);
                 font-size: 14px;
                 padding: 8px;
                 box-sizing: border-box;
                 margin-bottom: 10px;
                 outline: none;
-                box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+                box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+                transition: all 0.2s;
             }
             input:focus { border-color: #f6851b; box-shadow: 0 0 0 2px rgba(246, 133, 27, 0.2); }
             button {
@@ -119,10 +152,10 @@ function showQuickUnlockPrompt(targetField, host) {
             }
             button:hover { background: #e27612; transform: translateY(-1px); }
             button:active { transform: translateY(0); }
-            .cancel { font-size: 10px; color: #888; text-align: center; margin-top: 8px; cursor: pointer; }
-            .cancel:hover { color: #ccc; }
+            .cancel { font-size: 10px; color: var(--cancel); text-align: center; margin-top: 8px; cursor: pointer; transition: color 0.2s; }
+            .cancel:hover { color: #f6851b; }
         </style>
-        <div class="mini-prompt">
+        <div class="mini-prompt ${currentTheme}-theme">
             <div class="title">BlindVault Unlock</div>
             <input type="password" id="bv-pass" placeholder="Master Password" autofocus>
             <button id="bv-unlock-btn">Unlock & Autofill</button>
@@ -246,25 +279,42 @@ function showSavePrompt(site, username, password) {
         <style>
             @keyframes bvSlideIn { from { transform: translateX(300px); } to { transform: translateX(0); } }
             .prompt {
+                --bg: #1e1e1e;
+                --text: #ffffff;
+                --border: #333;
+                --sub: #a0a0a0;
+                --cancel-bg: #333;
+                --cancel-text: #a0a0a0;
+                
                 font-family: 'Inter', system-ui, -apple-system, sans-serif;
                 font-size: 14px;
-                color: white;
-                background-color: #1e1e1e;
-                border: 1px solid #333;
+                color: var(--text);
+                background-color: var(--bg);
+                border: 1px solid var(--border);
                 border-radius: 12px;
                 padding: 16px;
-                boxShadow: 0 4px 20px rgba(0,0,0,0.5);
+                box-shadow: 0 4px 20px rgba(0,0,0,0.5);
                 display: block;
+                transition: background 0.3s, color 0.3s;
+            }
+            .light-theme {
+                --bg: #ffffff;
+                --text: #212529;
+                --border: #dee2e6;
+                --sub: #6c757d;
+                --cancel-bg: #f1f3f5;
+                --cancel-text: #495057;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.1);
             }
             .title { font-weight: bold; color: #f6851b; margin-bottom: 4px; }
-            .subtitle { font-size: 12px; margin-bottom: 12px; color: #a0a0a0; }
+            .subtitle { font-size: 12px; margin-bottom: 12px; color: var(--sub); transition: color 0.3s; }
             .btn-group { display: flex; gap: 8px; }
-            button { border: none; padding: 6px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; transition: opacity 0.2s; }
-            button:hover { opacity: 0.9; }
+            button { border: none; padding: 6px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; transition: all 0.2s; }
+            button:hover { opacity: 0.9; transform: translateY(-1px); }
             .save-btn { background: #f6851b; color: white; }
-            .cancel-btn { background: #333; color: #a0a0a0; }
+            .cancel-btn { background: var(--cancel-bg); color: var(--cancel-text); }
         </style>
-        <div class="prompt">
+        <div class="prompt ${currentTheme}-theme">
             <div class="title">Save to BlindVault?</div>
             <div class="subtitle">Do you want to save the password for <b>${site}</b>?</div>
             <div class="btn-group">
