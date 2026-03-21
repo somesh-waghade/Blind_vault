@@ -582,3 +582,53 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         displayVault(request.vault);
     }
 });
+
+// ============================================
+// Interactive Mascot Logic (Tracks cursor!)
+// ============================================
+const mascotHead = document.getElementById('mascot-head');
+const mascotPupils = document.getElementById('pupils');
+let targetHeadX = 0, targetHeadY = 0, targetRotate = 0;
+let targetPupilX = 0, targetPupilY = 0;
+let currentHeadX = 0, currentHeadY = 0, currentRotate = 0;
+let currentPupilX = 0, currentPupilY = 0;
+
+document.addEventListener('mousemove', (e) => {
+    if (!mascotHead || !mascotPupils) return;
+    
+    // Calculate normalized position relative to mascot
+    // Mascot is roughly at x=width/2, y=60
+    const centerX = window.innerWidth / 2;
+    const centerY = 60; 
+    
+    // Clamped distance to prevent extreme neck snapping
+    const deltaX = Math.max(-1, Math.min(1, (e.clientX - centerX) / centerX));
+    const deltaY = Math.max(-1, Math.min(1, (e.clientY - centerY) / window.innerHeight));
+    
+    // Set targets for animation
+    targetHeadX = deltaX * 8;      // Head moves up to 8px
+    targetHeadY = deltaY * 6;      // Head tilts up to 6px
+    targetRotate = deltaX * 6;     // Head rotates up to 6 degrees 
+    
+    targetPupilX = deltaX * 3.5;   // Pupils move more intensely
+    targetPupilY = deltaY * 3.5;
+});
+
+// Smooth animation loop using requestAnimationFrame (Hardware accelerated)
+function updateMascot() {
+    // Lerp (Linear Interpolation) for buttery smoothness
+    currentHeadX += (targetHeadX - currentHeadX) * 0.15;
+    currentHeadY += (targetHeadY - currentHeadY) * 0.15;
+    currentRotate += (targetRotate - currentRotate) * 0.15;
+    
+    currentPupilX += (targetPupilX - currentPupilX) * 0.25;
+    currentPupilY += (targetPupilY - currentPupilY) * 0.25;
+
+    if (mascotHead && mascotPupils) {
+        mascotHead.style.transform = `translate(${currentHeadX}px, ${currentHeadY}px) rotate(${currentRotate}deg)`;
+        mascotPupils.style.transform = `translate(${currentPupilX}px, ${currentPupilY}px)`;
+    }
+    
+    requestAnimationFrame(updateMascot);
+}
+updateMascot();
