@@ -62,7 +62,19 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           
           // Update in-memory vault
           if (!sessionStore.vault) sessionStore.vault = [];
-          sessionStore.vault.push({ site, username, password });
+          
+          // Check for existing to prevent duplicates
+          const existingIndex = sessionStore.vault.findIndex(c => 
+              c.site === site && c.username === username
+          );
+
+          if (existingIndex >= 0) {
+              console.log('BlindVault: Updating existing credential');
+              sessionStore.vault[existingIndex].password = password;
+          } else {
+              console.log('BlindVault: Adding new credential');
+              sessionStore.vault.push({ site, username, password });
+          }
 
           // Encrypt and Sync
           console.log('BlindVault: Starting encryption...');

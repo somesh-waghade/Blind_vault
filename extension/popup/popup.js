@@ -489,8 +489,13 @@ document.getElementById('add-btn').addEventListener('click', async () => {
             }
         }
 
-        // 2. Add new item
-        credentials.push({ site, username, password });
+        // 2. Add or Update item
+        const existingIndex = credentials.findIndex(c => c.site === site && c.username === username);
+        if (existingIndex >= 0) {
+            credentials[existingIndex].password = password;
+        } else {
+            credentials.push({ site, username, password });
+        }
 
         // 3. Encrypt whole vault
         const { ciphertext, iv } = await CryptoModule.encrypt(JSON.stringify(credentials), derivedKey);
