@@ -92,6 +92,40 @@ authBtn.addEventListener('click', async () => {
     const username = document.getElementById('username').value;
     const password = document.getElementById('password').value;
 
+    // Fast-path for Soft Unlock (Local Verification Only)
+    if (currentMode === 'unlock') {
+        if (!password) {
+            alert('Please enter your password');
+            return;
+        }
+        statusMsg.innerText = 'Unlocking vault...';
+        try {
+            const derived = await CryptoModule.deriveKey(password, FIXED_SALT);
+            const derivedJWK = await CryptoModule.exportKey(derived);
+            
+            chrome.storage.session.get(['keyJWK', 'userId'], async (res) => {
+                if (res.keyJWK && res.keyJWK.k === derivedJWK.k) {
+                    derivedKey = derived;
+                    chrome.storage.session.set({ ui_unlocked: true }, () => {
+                        authView.classList.add('hidden');
+                        vaultView.classList.remove('hidden');
+                        fetchVault(res.userId, res.keyJWK);
+                        statusMsg.innerText = 'Vault Unlocked! 🔓';
+                        document.getElementById('password').value = ''; // Clean input
+                    });
+                } else {
+                    alert('Incorrect Master Password');
+                    statusMsg.innerText = 'Securely store your passwords';
+                }
+            });
+        } catch (e) {
+            console.error(e);
+            alert('Security error during unlock');
+        }
+        return;
+    }
+
+    // Full Login / Register Path
     if (!username || !password) {
         alert('Please fill in all fields');
         return;
@@ -111,8 +145,6 @@ authBtn.addEventListener('click', async () => {
 
     if (currentMode === 'register') {
         registerUser(username, password);
-    } else if (currentMode === 'unlock') {
-        loginUser(username, password); // Re-run login to verify and unlock
     } else {
         loginUser(username, password);
     }
